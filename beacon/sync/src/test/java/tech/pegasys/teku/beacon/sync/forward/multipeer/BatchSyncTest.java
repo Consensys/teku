@@ -36,6 +36,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.StubBatchFactory;
@@ -150,6 +151,23 @@ class BatchSyncTest {
     assertThatBatch(batch1).isComplete();
     assertThatBatch(batch1).isConfirmed();
     assertBatchImported(batch1);
+  }
+
+  @Test
+  void shouldCancelInProgressImportWhenAborted() {
+    final SignedBlockAndState block5 = chainBuilder.generateBlockAtSlot(5);
+    final SignedBlockAndState block26 = chainBuilder.generateBlockAtSlot(26);
+    final SafeFuture<SyncResult> syncResult = sync.syncToChain(targetChain);
+
+    final Batch batch1 = batches.get(0);
+    batches.receiveBlocks(batch1, block5.getBlock());
+    batches.receiveBlocks(batches.get(1), block26.getBlock());
+    final SafeFuture<BatchImportResult> importResult = batches.getImportResult(batch1);
+
+    eventThread.execute(sync::abort);
+
+    assertThat(syncResult).isCompletedWithValue(SyncResult.FAILED);
+    assertThat(importResult).isCancelled();
   }
 
   @Test

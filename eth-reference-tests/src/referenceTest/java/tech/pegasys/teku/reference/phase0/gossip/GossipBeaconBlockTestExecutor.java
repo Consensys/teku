@@ -37,21 +37,24 @@ import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
-import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
@@ -135,6 +138,7 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
+            FastConfirmationTracker.NOOP,
             true,
             LateBlockReorgPreparationHandler.NOOP,
             DebugDataDumper.NOOP,
@@ -174,22 +178,48 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
         if (blockEntry.shouldRejectDescendants()) {
           failedBlockRoots.add(block.getRoot());
         }
-      } else if (!block.getRoot().equals(anchorPoint.getRoot())) {
-        final BlockImportResult importResult =
-            safeJoin(
-                forkChoice.onBlock(
-                    block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
-        if (blockEntry.isExecutionInvalidated()) {
-          assertThat(importResult.isSuccessful())
-              .describedAs(
-                  "Expected setup block %s import to fail with invalid execution payload",
-                  blockEntry.getBlock())
-              .isFalse();
-        } else {
-          assertThat(importResult.isSuccessful())
-              .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
-              .isTrue();
+      } else {
+        if (!block.getRoot().equals(anchorPoint.getRoot())) {
+          final BlockImportResult importResult =
+              safeJoin(
+                  forkChoice.onBlock(
+                      block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+          if (blockEntry.isExecutionInvalidated()) {
+            assertThat(importResult.isSuccessful())
+                .describedAs(
+                    "Expected setup block %s import to fail with invalid execution payload",
+                    blockEntry.getBlock())
+                .isFalse();
+          } else {
+            assertThat(importResult.isSuccessful())
+                .describedAs(
+                    "Expected setup block %s to import successfully", blockEntry.getBlock())
+                .isTrue();
+          }
         }
+        // Some fixtures pair a setup block with a SignedExecutionPayloadEnvelope (Gloas ePBS)
+        // via the `payload` key in meta.yaml. Deliver it to fork choice after the block itself
+        // (or, for the anchor block, after the anchor is initialized — the anchor's FULL node is
+        // not created automatically) so a FULL node exists for the block root, matching how a real
+        // node would observe it.
+        blockEntry
+            .getPayload()
+            .ifPresent(
+                payloadName -> {
+                  final SignedExecutionPayloadEnvelope envelope =
+                      loadSsz(
+                          testDefinition,
+                          payloadName + ".ssz_snappy",
+                          SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions())
+                              .getSignedExecutionPayloadEnvelopeSchema());
+                  final ExecutionPayloadImportResult envelopeImportResult =
+                      safeJoin(forkChoice.onExecutionPayloadEnvelope(envelope, executionLayer));
+                  assertThat(envelopeImportResult.isSuccessful())
+                      .describedAs(
+                          "Expected execution payload envelope %s to import successfully: %s",
+                          payloadName, envelopeImportResult.getFailureReason())
+                      .isTrue();
+                });
       }
     }
 
@@ -374,6 +404,11 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
       @JsonProperty(value = "payload_status")
       private FixturePayloadStatus payloadStatus;
 
+      // Gloas (ePBS) fixtures may pair a setup block with a SignedExecutionPayloadEnvelope,
+      // named here, which must be delivered to fork choice alongside the block.
+      @JsonProperty(value = "payload")
+      private String payload;
+
       public String getBlock() {
         return block;
       }
@@ -386,27 +421,16 @@ public class GossipBeaconBlockTestExecutor implements TestExecutor {
         return Optional.ofNullable(payloadStatus);
       }
 
+      public Optional<String> getPayload() {
+        return Optional.ofNullable(payload);
+      }
+
       public boolean isExecutionInvalidated() {
         return payloadStatus == FixturePayloadStatus.INVALIDATED;
       }
 
       public boolean shouldRejectDescendants() {
         return payloadStatus == null || payloadStatus == FixturePayloadStatus.NOT_VALIDATED;
-      }
-    }
-
-    private enum FixturePayloadStatus {
-      VALID,
-      NOT_VALIDATED,
-      INVALIDATED;
-
-      public PayloadStatus toPayloadStatus() {
-        return switch (this) {
-          case VALID -> PayloadStatus.VALID;
-          case NOT_VALIDATED -> PayloadStatus.ACCEPTED;
-          case INVALIDATED ->
-              PayloadStatus.invalid(Optional.empty(), Optional.of("Fixture execution invalidated"));
-        };
       }
     }
 

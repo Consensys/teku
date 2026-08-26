@@ -18,7 +18,6 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface ExecutionPayloadBid extends SszContainer {
@@ -49,8 +48,4 @@ public interface ExecutionPayloadBid extends SszContainer {
   SszList<SszKZGCommitment> getBlobKzgCommitments();
 
   Bytes32 getExecutionRequestsRoot();
-
-  default SlotAndBuilderIndex getSlotAndBuilderIndex() {
-    return new SlotAndBuilderIndex(getSlot(), getBuilderIndex());
-  }
 }

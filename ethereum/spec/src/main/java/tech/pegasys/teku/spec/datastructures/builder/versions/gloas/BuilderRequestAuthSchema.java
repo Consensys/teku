@@ -22,17 +22,18 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class RequestAuthSchema extends ContainerSchema2<RequestAuth, SszByteList, SszUInt64> {
+public class BuilderRequestAuthSchema
+    extends ContainerSchema2<BuilderRequestAuth, SszByteList, SszUInt64> {
 
-  public RequestAuthSchema(final long maxDataSize) {
+  public BuilderRequestAuthSchema(final long maxDataSize) {
     super(
-        "RequestAuthV1",
+        "BuilderRequestAuth",
         namedSchema("data", SszByteListSchema.create(maxDataSize)),
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
-  public RequestAuth create(final Bytes data, final UInt64 slot) {
-    return new RequestAuth(this, getDataSchema().fromBytes(data), slot);
+  public BuilderRequestAuth create(final Bytes data, final UInt64 slot) {
+    return new BuilderRequestAuth(this, getDataSchema().fromBytes(data), slot);
   }
 
   @SuppressWarnings("unchecked")
@@ -41,7 +42,7 @@ public class RequestAuthSchema extends ContainerSchema2<RequestAuth, SszByteList
   }
 
   @Override
-  public RequestAuth createFromBackingNode(final TreeNode node) {
-    return new RequestAuth(this, node);
+  public BuilderRequestAuth createFromBackingNode(final TreeNode node) {
+    return new BuilderRequestAuth(this, node);
   }
 }

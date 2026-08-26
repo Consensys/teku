@@ -176,11 +176,11 @@ public class ForkChoiceUtil {
   }
 
   /**
-   * is_not_epoch_boundary
+   * is_shuffling_stable
    *
    * @return {@code true} when {@code slot} is NOT at an epoch boundary.
    */
-  public boolean isNotEpochBoundary(final UInt64 slot) {
+  public boolean isShufflingStable(final UInt64 slot) {
     return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
   }
 
@@ -379,7 +379,7 @@ public class ForkChoiceUtil {
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
-    return isNotEpochBoundary(slot) && isFinalizationOk(store, slot);
+    return isShufflingStable(slot) && isFinalizationOk(store, slot);
   }
 
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {

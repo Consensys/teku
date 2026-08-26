@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -172,6 +173,16 @@ public abstract class AbstractBlockFactoryTest {
       final boolean postMerge,
       final Consumer<BeaconState> executionPayloadBuilder,
       final boolean blinded) {
+    return assertBlockCreated(blockSlot, spec, postMerge, executionPayloadBuilder, blinded, false);
+  }
+
+  protected BlockContainerAndMetaData assertBlockCreated(
+      final int blockSlot,
+      final Spec spec,
+      final boolean postMerge,
+      final Consumer<BeaconState> executionPayloadBuilder,
+      final boolean blinded,
+      final boolean includePayload) {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
@@ -278,7 +289,8 @@ public abstract class AbstractBlockFactoryTest {
                     blockSlotState,
                     randaoReveal,
                     Optional.empty(),
-                    requestedBuilderBoostFactor,
+                    includePayload,
+                    requestedBuilderBoostFactor.map(BuilderConfig::withBuilderBoostFactor),
                     BlockProductionPerformance.NOOP)));
 
     final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();

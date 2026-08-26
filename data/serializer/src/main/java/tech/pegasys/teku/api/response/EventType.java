@@ -40,6 +40,7 @@ public enum EventType {
   execution_payload_bid,
   payload_attestation_message,
   proposer_preferences,
+  fast_confirmation,
   inclusion_list;
 
   public static List<EventType> getTopics(final List<String> topics) {

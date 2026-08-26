@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
+import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
 import java.util.Collections;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -54,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -410,6 +414,25 @@ public class BlockOperationSelectorFactory {
                     .setBlockExecutionValue(blockExecutionValue));
   }
 
+  private SafeFuture<Void> cacheExecutionPayloadValue(
+      final ExecutionPayloadResult executionPayloadResult,
+      final ExecutionPayloadBid bid,
+      final BeaconState blockSlotState) {
+    final SafeFuture<UInt256> executionPayloadValueInWei;
+    if (bid.getBuilderIndex().equals(SpecConfigGloas.BUILDER_INDEX_SELF_BUILD)) {
+      // when self-building use the value of the local execution payload
+      executionPayloadValueInWei =
+          executionPayloadResult.getExecutionPayloadValueFutureFromLocalFlowRequired();
+    } else {
+      // total value of the builder bid when committing to one
+      executionPayloadValueInWei =
+          SafeFuture.completedFuture(
+              UInt256.valueOf(bid.getValue().bigIntegerValue()).multiply(GWEI_TO_WEI));
+    }
+    return executionPayloadValueInWei.thenAccept(
+        BeaconStateCache.getSlotCaches(blockSlotState)::setBlockExecutionValue);
+  }
+
   private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
       final ExecutionPayloadResult executionPayloadResult) {
@@ -550,18 +573,20 @@ public class BlockOperationSelectorFactory {
             false,
             Optional.empty(),
             blockProductionContext.blockProductionPerformance());
-    final SafeFuture<Void> setExecutionPayloadBid =
-        executionPayloadBidManager
-            .getBidForBlock(
-                parentRoot,
-                blockProductionContext.parentExecutionBlockHash(),
-                blockSlotState,
-                executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
-                blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
-                blockProductionContext.blockProductionPerformance())
-            .thenAccept(bodyBuilder::signedExecutionPayloadBid);
-    return SafeFuture.allOf(
-        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState), setExecutionPayloadBid);
+    return executionPayloadBidManager
+        .getBidForBlock(
+            parentRoot,
+            blockProductionContext.parentExecutionBlockHash(),
+            blockSlotState,
+            executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
+            blockProductionContext.builderConfig().map(BuilderConfig::getBuilderBoostFactor),
+            blockProductionContext.blockProductionPerformance())
+        .thenCompose(
+            bid -> {
+              bodyBuilder.signedExecutionPayloadBid(bid);
+              return cacheExecutionPayloadValue(
+                  executionPayloadResult, bid.getMessage(), blockSlotState);
+            });
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
@@ -618,20 +643,10 @@ public class BlockOperationSelectorFactory {
             () -> builderPayloadOrFallbackData.getFallbackDataRequired().getExecutionPayload());
   }
 
-  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-    return executionLayerBlockProductionManager.getCachedPayloadResult(slot);
-  }
-
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
     return block -> {
       final UInt64 slot = block.getSlot();
-      final ExecutionPayloadResult executionPayloadResult =
-          executionLayerBlockProductionManager
-              .getCachedPayloadResult(slot)
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+      final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResultRequired(slot);
 
       if (executionPayloadResult.isFromLocalFlow()) {
         // we performed a non-blinded flow, so the bundle must be in
@@ -652,6 +667,15 @@ public class BlockOperationSelectorFactory {
             .thenApply(Optional::orElseThrow);
       }
     };
+  }
+
+  public ExecutionPayloadResult getCachedPayloadResultRequired(final UInt64 slot) {
+    return executionLayerBlockProductionManager
+        .getCachedPayloadResult(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "ExecutionPayloadResult hasn't been cached for slot " + slot));
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {

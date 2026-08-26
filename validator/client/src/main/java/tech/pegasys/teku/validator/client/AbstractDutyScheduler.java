@@ -105,11 +105,21 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   private void calculateDuties(final UInt64 epochNumber) {
-    dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
+    calculateDutiesForEpoch(epochNumber);
     final int lookAheadEpochs = getLookAheadEpochs(epochNumber);
     for (int i = 1; i <= lookAheadEpochs; i++) {
-      dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::createEpochDuties);
+      calculateDutiesForEpoch(epochNumber.plus(i));
     }
+  }
+
+  private void calculateDutiesForEpoch(final UInt64 epochNumber) {
+    if (shouldScheduleDutiesAtEpoch(epochNumber)) {
+      dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
+    }
+  }
+
+  protected boolean shouldScheduleDutiesAtEpoch(final UInt64 epochNumber) {
+    return true;
   }
 
   private PendingDuties createEpochDuties(final UInt64 epochNumber) {

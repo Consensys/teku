@@ -125,6 +125,9 @@ public class EventSubscriptionManagerTest {
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, false);
 
+  private final FastConfirmationEvent sampleFastConfirmationEvent =
+      new FastConfirmationEvent(data.randomBytes32(), data.randomUInt64(), data.randomUInt64());
+
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock = data.randomSignedBeaconBlock(0);
   private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
@@ -285,6 +288,15 @@ public class EventSubscriptionManagerTest {
 
     triggerFinalizedCheckpointEvent();
     checkEvent("finalized_checkpoint", sampleCheckpointEvent);
+  }
+
+  @Test
+  void shouldPropagateFastConfirmationMessages() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=fast_confirmation");
+    manager.registerClient(client1);
+
+    triggerFastConfirmationEvent();
+    checkEvent("fast_confirmation", sampleFastConfirmationEvent);
   }
 
   @Test
@@ -684,6 +696,14 @@ public class EventSubscriptionManagerTest {
         new Checkpoint(
             sampleCheckpointEvent.getData().epoch, sampleCheckpointEvent.getData().block),
         false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerFastConfirmationEvent() {
+    manager.onFastConfirmation(
+        sampleFastConfirmationEvent.getData().block,
+        sampleFastConfirmationEvent.getData().slot,
+        sampleFastConfirmationEvent.getData().currentSlot);
     asyncRunner.executeQueuedActions();
   }
 

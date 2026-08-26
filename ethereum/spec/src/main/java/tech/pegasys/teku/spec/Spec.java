@@ -1026,7 +1026,6 @@ public class Spec {
   // Execution Payload Proposal
   public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
       final UInt64 proposalSlot,
-      final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
       final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {
     return atSlot(proposalSlot)
@@ -1035,8 +1034,7 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
-        .createNewUnsignedExecutionPayload(
-            builderIndex, blockAndState, executionPayloadProposalDataFuture);
+        .createNewUnsignedExecutionPayload(blockAndState, executionPayloadProposalDataFuture);
   }
 
   // Blind Block Utils
