@@ -25,7 +25,6 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,7 +79,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
-import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -374,41 +372,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 timeIntoSlotMillis =
         store.getTimeInMillis().minusMinZero(store.getGenesisTimeMillis()).mod(slotDurationMillis);
 
-    // Do not process inclusion lists from known equivocators
-    final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot =
-        new SlotAndInclusionListCommitteeRoot(
-            inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
-    final UInt64 validatorIndex = inclusionList.getValidatorIndex();
-
-    if (inclusionListStore.isInclusionListEquivocator(
-        slotAndInclusionListCommitteeRoot, validatorIndex)) {
-      return SafeFuture.completedFuture(InclusionListImportResult.FAILED_EQUIVOCATED);
-    } else {
-      final Optional<List<InclusionList>> maybeInclusionLists =
-          inclusionListStore.getInclusionLists(slotAndInclusionListCommitteeRoot);
-      final List<InclusionList> inclusionLists =
-          maybeInclusionLists.orElse(Collections.emptyList()).stream()
-              .filter(il -> il.getValidatorIndex().equals(validatorIndex))
-              .toList();
-
-      if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
-        inclusionListStore.putEquivocatedInclusionList(inclusionList);
-        return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
-      }
-
-      final boolean isBeforeInclusionListDue =
-          isBeforeInclusionListDue(spec, currentSlot, signedInclusionList, timeIntoSlotMillis);
-      if (isBeforeInclusionListDue) {
-        inclusionListStore.putInclusionList(inclusionList);
-        return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
-      } else {
-        return SafeFuture.completedFuture(
-            InclusionListImportResult.FAILED_PAST_INCLUSION_LIST_DEADLINE);
-      }
-    }
+    final boolean timely =
+        isInclusionListTimely(spec, currentSlot, signedInclusionList, timeIntoSlotMillis);
+    inclusionListStore.processInclusionList(signedInclusionList, timely);
+    return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
   }
 
-  private boolean isBeforeInclusionListDue(
+  private boolean isInclusionListTimely(
       final Spec spec,
       final UInt64 currentSlot,
       final SignedInclusionList signedInclusionList,
@@ -416,8 +386,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 inclusionListSlot = signedInclusionList.getMessage().getSlot();
     final int inclusionListDueMillis =
         spec.getInclusionListDueMillis(inclusionListSlot).orElseThrow();
+    // The inclusion list deadline is an exclusive upper bound
     return currentSlot.equals(inclusionListSlot)
-        && timeIntoSlotMillis.isLessThanOrEqualTo(inclusionListDueMillis);
+        && timeIntoSlotMillis.isLessThan(inclusionListDueMillis);
   }
 
   public void onAttesterSlashing(

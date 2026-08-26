@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,10 +33,12 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListEntry;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -74,7 +77,7 @@ class InclusionListsBlockUpdaterTest {
     when(spec.processSlots(state, proposerSlot)).thenReturn(proposerState);
     when(proposersDataManager.isProposerForSlot(proposerSlot, proposerState)).thenReturn(true);
     when(inclusionListStore.getInclusionLists(inclusionListSlot))
-        .thenReturn(Optional.of(List.of(emptyInclusionList)));
+        .thenReturn(Optional.of(List.of(createEntry(emptyInclusionList))));
 
     assertThatSafeFuture(
             inclusionListsBlockUpdater.onUpdateBlockWithInclusionListsDue(inclusionListSlot))
@@ -106,7 +109,7 @@ class InclusionListsBlockUpdaterTest {
     when(spec.processSlots(state, proposerSlot)).thenReturn(proposerState);
     when(proposersDataManager.isProposerForSlot(proposerSlot, proposerState)).thenReturn(true);
     when(inclusionListStore.getInclusionLists(inclusionListSlot))
-        .thenReturn(Optional.of(List.of(inclusionList)));
+        .thenReturn(Optional.of(List.of(createEntry(inclusionList))));
     when(spec.getBlockRootAtSlot(proposerState, inclusionListSlot)).thenReturn(parentRoot);
     when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
     when(chainHead.getRoot()).thenReturn(parentRoot);
@@ -119,5 +122,13 @@ class InclusionListsBlockUpdaterTest {
         .isCompletedWithOptionalContaining(payloadId);
 
     verify(forkChoiceNotifier).getPayloadId(parentForkChoiceNode, proposerSlot, transactions);
+  }
+
+  private InclusionListEntry createEntry(final InclusionList inclusionList) {
+    return new InclusionListEntry(
+        SchemaDefinitionsHeze.required(hezeSpec.getGenesisSchemaDefinitions())
+            .getSignedInclusionListSchema()
+            .create(inclusionList, BLSSignature.empty()),
+        true);
   }
 }
