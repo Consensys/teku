@@ -1,10 +1,10 @@
 {
-  "title" : "SignedRequestAuthV1",
+  "title" : "SignedBuilderRequestAuth",
   "type" : "object",
   "required" : [ "message", "signature" ],
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/RequestAuthV1"
+      "$ref" : "#/components/schemas/BuilderRequestAuth"
     },
     "signature" : {
       "type" : "string",

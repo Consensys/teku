@@ -255,10 +255,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(
         () ->
             typeDefClient.createUnsignedBlock(
-                slot,
-                randaoReveal,
-                graffiti,
-                builderConfig.map(BuilderConfig::getBuilderBoostFactor)));
+                slot, randaoReveal, graffiti, includePayload, builderConfig));
   }
 
   @Override
@@ -390,7 +387,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
-      final UInt64 slot, final UInt64 builderIndex) {
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
