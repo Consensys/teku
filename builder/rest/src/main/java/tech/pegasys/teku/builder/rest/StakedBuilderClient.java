@@ -35,10 +35,13 @@ public interface StakedBuilderClient {
       Bytes32 parentHash,
       Bytes32 parentRoot,
       BLSPublicKey proposerPubkey,
-      Optional<SignedBuilderRequestAuth> auth);
+      Optional<SignedBuilderRequestAuth> auth)
+      throws BuilderClientException;
 
   SafeFuture<Void> submitBuilderPreferences(
-      BLSPublicKey validatorPubkey, BuilderPreferencesRequest builderPreferencesRequest);
+      BLSPublicKey validatorPubkey, BuilderPreferencesRequest builderPreferencesRequest)
+      throws BuilderClientException;
 
-  SafeFuture<Void> submitSignedBeaconBlock(SignedBeaconBlock signedBeaconBlock);
+  SafeFuture<Void> submitSignedBeaconBlock(SignedBeaconBlock signedBeaconBlock)
+      throws BuilderClientException;
 }
