@@ -231,6 +231,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationEventChannel;
 import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
 import tech.pegasys.teku.statetransition.lightclient.LightClientServerService;
 import tech.pegasys.teku.statetransition.lightclient.LightClientUpdateStore;
@@ -477,7 +478,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // larger default size. das runner should be separate to the operation pool runner as it's a
     // bunch of tasks, not just operation pool activities
     this.dasAsyncRunner = serviceConfig.createAsyncRunner("das", 4, 20_000);
-    this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
+    if (eth2NetworkConfig.isFastConfirmationEnabled()) {
+      final AsyncRunner fastConfirmationAsyncRunner =
+          serviceConfig.createAsyncRunner("fastconfirmation", 1);
+      this.fastConfirmationTracker =
+          FastConfirmationTracker.create(
+              spec,
+              Optional.of(fastConfirmationAsyncRunner),
+              serviceConfig.getEventChannels().getPublisher(FastConfirmationEventChannel.class),
+              serviceConfig.getMetricsSystem(),
+              serviceConfig.getTimeProvider());
+    } else {
+      this.fastConfirmationTracker = FastConfirmationTracker.NOOP;
+    }
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
@@ -566,6 +579,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       eventChannels.subscribe(SlotEventsChannel.class, ephemerySlotValidationService);
     }
     SafeFuture.allOfFailFast(
+            forkChoice.getFastConfirmationService().start(),
             attestationManager.start(),
             p2pNetwork.start(),
             blockManager.start(),
@@ -602,6 +616,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
+            // Stopped before the fork-choice executor below, so no in-flight fast confirmation
+            // work is submitted to a stopped event thread and logged as an error.
+            forkChoice.getFastConfirmationService().stop(),
             beaconRestAPI.map(BeaconRestApi::stop).orElse(SafeFuture.completedFuture(null)),
             syncService.stop(),
             blockManager.stop(),
@@ -1131,7 +1148,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema(),
             spec);
 
-    final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
+    final MetadataDasPeerCustodyTracker peerCustodyTracker =
+        new MetadataDasPeerCustodyTracker(maxGroups);
     p2pNetwork.subscribeConnect(peerCustodyTracker);
     final DasPeerCustodyCountSupplier custodyCountSupplier =
         DasPeerCustodyCountSupplier.capped(
