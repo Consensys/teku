@@ -72,6 +72,8 @@ public class DefaultExecutionPayloadBidManager
   private final ExecutionPayloadBidSelector bidSelector;
 
   // bids are valid for the current and next slot, so they're indexed by bid.slot for pruning;
+  // Sorting bids is only needed during block production, which occurs infrequently. To prevent
+  // unnecessary insertion overhead the rest of the time, we keep them in a standard set.
   private final ConcurrentNavigableMap<UInt64, Set<SignedExecutionPayloadBid>> bidsBySlot =
       new ConcurrentSkipListMap<>();
 
