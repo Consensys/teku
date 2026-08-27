@@ -42,10 +42,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.ValidatorStatus;
@@ -110,7 +114,7 @@ class RemoteValidatorApiHandlerTest {
   public void beforeEach() {
     apiHandler =
         new RemoteValidatorApiHandler(
-            endpoint, typeDefClient, asyncRunner, readinessAsyncRunner, true);
+            endpoint, spec, typeDefClient, asyncRunner, readinessAsyncRunner, true);
   }
 
   @Test
@@ -490,6 +494,132 @@ class RemoteValidatorApiHandlerTest {
     final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, true);
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
+  }
+
+  @Test
+  public void getProposerDuties_WhenFuluCompatible_WhenV2NotAvailable_FallsBackToV1() {
+    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
+    final ProposerDuties v1Response =
+        new ProposerDuties(
+            Bytes32.fromHexString("0x1234"),
+            List.of(new ProposerDuty(blsPublicKey, 1, UInt64.ZERO)),
+            false);
+
+    when(typeDefClient.getProposerDutiesV2(any())).thenReturn(Optional.empty());
+    when(typeDefClient.getProposerDuties(ONE)).thenReturn(Optional.of(v1Response));
+
+    final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, true);
+
+    // First execute: v2 task runs → empty → queues v1 fallback task
+    asyncRunner.executeQueuedActions();
+    // Second execute: v1 fallback task runs → future completes
+    asyncRunner.executeQueuedActions();
+
+    assertThat(safeJoin(future)).contains(v1Response);
+  }
+
+  @Test
+  public void getProposerDuties_WhenFuluCompatible_WhenV2NotAvailable_SubsequentCallsUseV1() {
+    when(typeDefClient.getProposerDutiesV2(any())).thenReturn(Optional.empty());
+    when(typeDefClient.getProposerDuties(any()))
+        .thenReturn(
+            Optional.of(new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(), false)));
+
+    // First call: v2 fails, falls back to v1, records that v2 is not supported
+    var unused1 = apiHandler.getProposerDuties(ONE, true);
+    asyncRunner.executeQueuedActions(); // runs v2 → empty → queues v1
+    asyncRunner.executeQueuedActions(); // runs v1 (fallback)
+
+    // Second call: goes directly to v1 without trying v2
+    var unused2 = apiHandler.getProposerDuties(ONE, true);
+    asyncRunner.executeQueuedActions(); // runs v1 directly (v2 known-unsupported)
+
+    verify(typeDefClient, times(1)).getProposerDutiesV2(any());
+    verify(typeDefClient, times(2)).getProposerDuties(any());
+  }
+
+  @Test
+  public void getProposerDuties_WhenFuluCompatible_WithinTwoEpochsOfGloas_UsesV2WithoutFallback() {
+    final UInt64 gloasForkEpoch = UInt64.valueOf(100);
+    final Spec gloasSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(gloasForkEpoch);
+    final RemoteValidatorApiHandler gloasHandler =
+        new RemoteValidatorApiHandler(
+            endpoint, gloasSpec, typeDefClient, asyncRunner, readinessAsyncRunner, true);
+
+    // epoch = gloasForkEpoch - 1, within 2 epochs of Gloas
+    final UInt64 epoch = gloasForkEpoch.minus(1);
+    when(typeDefClient.getProposerDutiesV2(epoch)).thenReturn(Optional.empty());
+
+    final SafeFuture<Optional<ProposerDuties>> future = gloasHandler.getProposerDuties(epoch, true);
+
+    // Only one executeQueuedActions needed: no fallback is set up near Gloas
+    assertThat(unwrapToOptional(future)).isEmpty();
+    // v1 must not be called when within 2 epochs of Gloas
+    verify(typeDefClient, times(0)).getProposerDuties(any());
+  }
+
+  @Test
+  public void getProposerDuties_WhenFuluCompatible_WithinTwoEpochsOfGloas_ResetsFallbackState() {
+    final UInt64 gloasForkEpoch = UInt64.valueOf(100);
+    final Spec gloasSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(gloasForkEpoch);
+    final RemoteValidatorApiHandler gloasHandler =
+        new RemoteValidatorApiHandler(
+            endpoint, gloasSpec, typeDefClient, asyncRunner, readinessAsyncRunner, true);
+
+    // First: trigger fallback state by requesting an epoch outside the 2-epoch window
+    final UInt64 earlyEpoch = UInt64.valueOf(10);
+    when(typeDefClient.getProposerDutiesV2(earlyEpoch)).thenReturn(Optional.empty());
+    when(typeDefClient.getProposerDuties(earlyEpoch))
+        .thenReturn(
+            Optional.of(new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(), false)));
+    var unused = gloasHandler.getProposerDuties(earlyEpoch, true);
+    asyncRunner.executeQueuedActions(); // runs v2 → empty → queues v1
+    asyncRunner.executeQueuedActions(); // runs v1 (fallback)
+
+    // Now request within 2 epochs of Gloas — v2 should be tried again (state reset)
+    final UInt64 nearGloasEpoch = gloasForkEpoch.minus(1);
+    final ProposerDuties v2Response =
+        new ProposerDuties(Bytes32.fromHexString("0x5678"), List.of(), false);
+    when(typeDefClient.getProposerDutiesV2(nearGloasEpoch)).thenReturn(Optional.of(v2Response));
+
+    final SafeFuture<Optional<ProposerDuties>> future =
+        gloasHandler.getProposerDuties(nearGloasEpoch, true);
+
+    assertThat(unwrapToValue(future)).isEqualTo(v2Response);
+    verify(typeDefClient, times(1)).getProposerDutiesV2(nearGloasEpoch);
+    verify(typeDefClient, times(0)).getProposerDuties(nearGloasEpoch);
+  }
+
+  @ParameterizedTest(name = "gloasEpoch={0}, queryEpoch={1}, expected={2}")
+  @MethodSource("isWithinTwoEpochsOfGloasArgs")
+  public void isWithinTwoEpochsOfGloas(
+      final long gloasEpoch, final long queryEpoch, final boolean expected) {
+    final Spec gloasSpec =
+        TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.valueOf(gloasEpoch));
+    final RemoteValidatorApiHandler handler =
+        new RemoteValidatorApiHandler(
+            endpoint, gloasSpec, typeDefClient, asyncRunner, readinessAsyncRunner, true);
+    assertThat(handler.isWithinTwoEpochsOfGloas(UInt64.valueOf(queryEpoch))).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> isWithinTwoEpochsOfGloasArgs() {
+    return Stream.of(
+        // epoch exactly at gloasForkEpoch - 2 → within window
+        Arguments.of(10, 8, true),
+        // epoch exactly at gloasForkEpoch - 1 → within window
+        Arguments.of(10, 9, true),
+        // epoch at gloasForkEpoch itself → within window
+        Arguments.of(10, 10, true),
+        // epoch beyond gloasForkEpoch → within window
+        Arguments.of(10, 11, true),
+        // epoch just before the window → not within
+        Arguments.of(10, 7, false),
+        // epoch well before the window → not within
+        Arguments.of(10, 0, false),
+        // gloasEpoch = 1 → window would underflow UInt64, so no epoch qualifies
+        Arguments.of(1, 0, false),
+        // gloasEpoch = 2 → window starts at 0, epoch 0 qualifies
+        Arguments.of(2, 0, true));
   }
 
   @Test
