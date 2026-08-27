@@ -65,13 +65,13 @@ public class ExecutionPayloadBidSelector {
       final Bytes32 parentBlockHash,
       final BeaconState state) {
     return remoteBids.stream()
-        .sorted(BID_BY_VALUE_DESCENDING)
         .filter(bid -> bid.getMessage().getParentBlockRoot().equals(parentRoot))
         .filter(bid -> bid.getMessage().getParentBlockHash().equals(parentBlockHash))
         .filter(
             bid ->
                 executionPayloadBidCircuitBreaker.isBuilderAllowed(
                     bid.getMessage().getBuilderIndex(), state))
+        .sorted(BID_BY_VALUE_DESCENDING)
         .findFirst();
   }
 
