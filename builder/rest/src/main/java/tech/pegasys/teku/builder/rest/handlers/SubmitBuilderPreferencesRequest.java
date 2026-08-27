@@ -17,6 +17,7 @@ import static tech.pegasys.teku.builder.rest.BuilderApiMethod.SUBMIT_BUILDER_PRE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.util.Map;
+import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -48,6 +49,7 @@ public class SubmitBuilderPreferencesRequest extends AbstractBuilderRequest {
                 .lowerCaseName()),
         builderPreferencesRequest,
         ApiSchemas.BUILDER_PREFERENCES_REQUEST_SCHEMA.getJsonTypeDefinition(),
-        ResponseHandler.voidHandler());
+        ResponseHandler.voidHandler(),
+        Optional.empty());
   }
 }

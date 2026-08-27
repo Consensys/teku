@@ -16,8 +16,11 @@ package tech.pegasys.teku.builder.rest.handlers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -59,7 +62,8 @@ public abstract class AbstractBuilderRequest {
       final Map<String, String> headers,
       final TObject requestBodyObj,
       final SerializableTypeDefinition<TObject> objectTypeDefinition,
-      final ResponseHandler<T> responseHandler) {
+      final ResponseHandler<T> responseHandler,
+      final Optional<Duration> maybeTimeout) {
     final String requestBody;
     try {
       requestBody = JsonUtil.serialize(requestBodyObj, objectTypeDefinition);
@@ -71,7 +75,7 @@ public abstract class AbstractBuilderRequest {
             .url(buildUrl(apiMethod, urlParams))
             .post(RequestBody.create(requestBody, APPLICATION_JSON));
     headers.forEach(builder::addHeader);
-    return executeCall(builder.build(), responseHandler);
+    return executeCall(builder.build(), responseHandler, maybeTimeout);
   }
 
   protected <T> Optional<T> postEmpty(
@@ -82,7 +86,7 @@ public abstract class AbstractBuilderRequest {
     final Request.Builder builder =
         new Request.Builder().url(buildUrl(apiMethod, urlParams)).post(EMPTY_REQUEST_BODY);
     headers.forEach(builder::addHeader);
-    return executeCall(builder.build(), responseHandler);
+    return executeCall(builder.build(), responseHandler, Optional.empty());
   }
 
   protected <T> Optional<T> postOctetStream(
@@ -96,12 +100,17 @@ public abstract class AbstractBuilderRequest {
             .url(buildUrl(apiMethod, urlParams))
             .post(RequestBody.create(body, OCTET_STREAM));
     headers.forEach(builder::addHeader);
-    return executeCall(builder.build(), responseHandler);
+    return executeCall(builder.build(), responseHandler, Optional.empty());
   }
 
   private <T> Optional<T> executeCall(
-      final Request request, final ResponseHandler<T> responseHandler) {
-    try (final Response response = httpClient.newCall(request).execute()) {
+      final Request request,
+      final ResponseHandler<T> responseHandler,
+      final Optional<Duration> maybeTimeout) {
+    final Call call = httpClient.newCall(request);
+    maybeTimeout.ifPresent(
+        timeout -> call.timeout().timeout(timeout.toMillis(), TimeUnit.MILLISECONDS));
+    try (final Response response = call.execute()) {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
       return responseHandler.handleResponse(request, response);
     } catch (final IOException ex) {

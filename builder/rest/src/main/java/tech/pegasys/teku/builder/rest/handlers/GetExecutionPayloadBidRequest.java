@@ -86,7 +86,8 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
           headers,
           auth.get(),
           ApiSchemas.SIGNED_BUILDER_REQUEST_AUTH_SCHEMA.getJsonTypeDefinition(),
-          responseHandler);
+          responseHandler,
+          Optional.of(BUILDER_PROPOSAL_DELAY_TOLERANCE));
     } else {
       return postEmpty(GET_EXECUTION_PAYLOAD_BID, urlParams, headers, responseHandler);
     }
