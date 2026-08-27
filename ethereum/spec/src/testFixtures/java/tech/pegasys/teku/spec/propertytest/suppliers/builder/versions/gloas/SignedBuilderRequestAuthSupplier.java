@@ -11,8 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs;
+package tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.gloas;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedBuilderRequestAuth;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public record SlotAndBuilderIndex(UInt64 slot, UInt64 builderIndex) {}
+public class SignedBuilderRequestAuthSupplier
+    extends DataStructureUtilSupplier<SignedBuilderRequestAuth> {
+  public SignedBuilderRequestAuthSupplier() {
+    super(DataStructureUtil::randomSignedBuilderRequestAuth, SpecMilestone.GLOAS);
+  }
+}

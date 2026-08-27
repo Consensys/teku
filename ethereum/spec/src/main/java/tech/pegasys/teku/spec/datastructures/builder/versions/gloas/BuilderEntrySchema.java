@@ -32,7 +32,7 @@ public class BuilderEntrySchema
     extends ContainerSchema6<
         BuilderEntry,
         SszByteList,
-        SignedRequestAuth,
+        SignedBuilderRequestAuth,
         SszList<SszPublicKey>,
         SszUInt64,
         SszUInt64,
@@ -45,7 +45,7 @@ public class BuilderEntrySchema
     super(
         "BuilderEntry",
         namedSchema("url", SszByteListSchema.create(MAX_BUILDER_URL_SIZE)),
-        namedSchema("auth", ApiSchemas.SIGNED_REQUEST_AUTH_SCHEMA),
+        namedSchema("auth", ApiSchemas.SIGNED_BUILDER_REQUEST_AUTH_SCHEMA),
         namedSchema(
             "builder_pubkeys",
             SszListSchema.create(SszPublicKeySchema.INSTANCE, MAX_BUILDER_PUBKEYS)),
@@ -56,7 +56,7 @@ public class BuilderEntrySchema
 
   public BuilderEntry create(
       final String url,
-      final SignedRequestAuth auth,
+      final SignedBuilderRequestAuth auth,
       final List<BLSPublicKey> builderPubkeys,
       final UInt64 maxExecutionPayment,
       final UInt64 minBid,

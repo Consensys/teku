@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.metadata.ExecutionPayloadAndMetaData;
 
-class GetExecutionPayloadEnvelopeTest
+class GetSignedExecutionPayloadEnvelopeTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
@@ -44,7 +44,7 @@ class GetExecutionPayloadEnvelopeTest
     initialise(SpecMilestone.GLOAS);
     genesis();
 
-    setHandler(new GetExecutionPayloadEnvelope(chainDataProvider, schemaDefinitionCache));
+    setHandler(new GetSignedExecutionPayloadEnvelope(chainDataProvider, schemaDefinitionCache));
     request.setPathParameter("block_id", "head");
   }
 
@@ -81,7 +81,7 @@ class GetExecutionPayloadEnvelopeTest
     final String expected =
         Resources.toString(
             Resources.getResource(
-                GetExecutionPayloadEnvelopeTest.class, "getExecutionPayload.json"),
+                GetSignedExecutionPayloadEnvelopeTest.class, "getExecutionPayload.json"),
             UTF_8);
     final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(expected);
     assertThat(responseDataAsJsonNode).isEqualTo(expectedAsJsonNode);

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -312,6 +313,10 @@ public class SimpleSidecarRetriever
   }
 
   private boolean activateMatchedRequest(final RequestMatch match) {
+    // The request may have completed after it was matched to a peer.
+    if (isStaleRequest(match.request)) {
+      return false;
+    }
     if (!match.request.attemptingPeers.add(match.peer.nodeId)) {
       // already attempting this column via this peer - a concurrent round can have claimed this
       // peer between the match being proposed and now, in which case no RPC fires here
@@ -335,6 +340,13 @@ public class SimpleSidecarRetriever
               reqRespCompleted(match.request, match.peer, sidecar);
               if (err == null) {
                 match.peer.countSidecarReceived();
+              } else if (ExceptionUtil.hasCause(err, CancellationException.class)) {
+                // the request was cancelled by us because the sidecar was no longer needed (for
+                // example it arrived via gossip), so the peer must not be penalised for it
+                match.peer.discardSidecarRequest();
+                LOG.trace(
+                    "SimpleSidecarRetriever.Request cancelled for {}",
+                    () -> match.request.columnId);
               } else {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
@@ -365,7 +377,8 @@ public class SimpleSidecarRetriever
     // keep consuming this peer's request budget in createFromCurrentPendingRequests for as long as
     // the column stays pending, with no later timeout to clear it - and with a small per-peer
     // limit that can lock the peer out of serving the request that would have replaced the entry.
-    if (!pendingRequests.containsKey(match.request.columnId)
+    if (isStaleRequest(match.request)
+        || !pendingRequests.containsKey(match.request.columnId)
         // reqRespCompleted removes from attemptingPeers *before* activeRequests, so observing the
         // peer gone here means our put came after (or raced with) that cleanup.
         || !match.request.attemptingPeers.contains(match.peer.nodeId)) {
@@ -376,11 +389,16 @@ public class SimpleSidecarRetriever
         // The RPC was still buffered, so flush() will drop it and it never reaches the network.
         // Give the peer back the request we charged it above: scoring it down for a request we
         // withdrew ourselves would push a healthy peer down the selection order.
-        match.peer.uncountSidecarRequest();
+        match.peer.discardSidecarRequest();
       }
       return false;
     }
     return true;
+  }
+
+  @SuppressWarnings({"ReferenceEquality", "ReferenceComparison"})
+  private boolean isStaleRequest(final RetrieveRequest request) {
+    return pendingRequests.get(request.columnId) != request;
   }
 
   private Optional<ConnectedPeer> findBestMatchingPeer(
@@ -681,11 +699,11 @@ public class SimpleSidecarRetriever
     }
 
     /**
-     * Rolls back a {@link #countSidecarRequest()} for an attempt that was withdrawn before reaching
-     * the network, so the peer is not scored down for it. Floored at the counter's initial value of
-     * 1 to keep {@link #getResponseScore()} from dividing by zero.
+     * Reverts a {@link #countSidecarRequest()} for a request which was cancelled on our side, so
+     * that the peer's response score is not affected by a response we stopped waiting for.
      */
-    public void uncountSidecarRequest() {
+    public void discardSidecarRequest() {
+      // counters could have been reset in between, so never go below the initial value
       sidecarsRequested.updateAndGet(current -> Math.max(1, current - 1));
     }
 
