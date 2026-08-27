@@ -82,11 +82,12 @@ public abstract class AbstractBuilderRequest {
       final BuilderApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Map<String, String> headers,
-      final ResponseHandler<T> responseHandler) {
+      final ResponseHandler<T> responseHandler,
+      final Optional<Duration> maybeTimeout) {
     final Request.Builder builder =
         new Request.Builder().url(buildUrl(apiMethod, urlParams)).post(EMPTY_REQUEST_BODY);
     headers.forEach(builder::addHeader);
-    return executeCall(builder.build(), responseHandler, Optional.empty());
+    return executeCall(builder.build(), responseHandler, maybeTimeout);
   }
 
   protected <T> Optional<T> postOctetStream(

@@ -89,7 +89,12 @@ public class GetExecutionPayloadBidRequest extends AbstractBuilderRequest {
           responseHandler,
           Optional.of(BUILDER_PROPOSAL_DELAY_TOLERANCE));
     } else {
-      return postEmpty(GET_EXECUTION_PAYLOAD_BID, urlParams, headers, responseHandler);
+      return postEmpty(
+          GET_EXECUTION_PAYLOAD_BID,
+          urlParams,
+          headers,
+          responseHandler,
+          Optional.of(BUILDER_PROPOSAL_DELAY_TOLERANCE));
     }
   }
 }
