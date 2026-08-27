@@ -39,6 +39,13 @@ public class StakedBuilderClientProvider {
   public StakedBuilderClient getClient(final String url) {
     return clients.computeIfAbsent(
         url,
-        __ -> new OkHttpStakedBuilderClient(asyncRunner, spec, HttpUrl.get(url), okHttpClient));
+        __ ->
+            new OkHttpStakedBuilderClient(
+                asyncRunner,
+                spec,
+                // Trailing slash required so HttpUrl.resolve appends the API path rather than
+                // replacing the last segment of the base URL.
+                HttpUrl.get(url.endsWith("/") ? url : url + "/"),
+                okHttpClient));
   }
 }
