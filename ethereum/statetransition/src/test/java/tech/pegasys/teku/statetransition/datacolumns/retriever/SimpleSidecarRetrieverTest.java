@@ -544,6 +544,39 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  void winningHedgeShouldNotPenalisePeerWhoseAttemptWasCancelled() {
+    final TestPeer slowPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofDays(1))
+            .currentRequestLimit(1000);
+    final TestPeer fastAlternatePeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final DataColumnSidecar sidecar0 = createSidecarAndAddToAllPeers(10, fastAlternatePeer);
+    final DataColumnSlotAndIdentifier id0 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar0);
+
+    testPeerManager.connectPeer(slowPeer);
+    final SafeFuture<DataColumnSidecar> resp = hedgingRetriever.retrieve(id0);
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(resp).isNotDone();
+
+    testPeerManager.connectPeer(fastAlternatePeer);
+    advanceTimeGradually(retrieverRound.multipliedBy(3));
+
+    // The hedge won and the slow peer's still in-flight attempt was cancelled by us
+    assertThat(resp).isCompletedWithValue(sidecar0);
+    assertThat(hedgingRetriever.getHedgeCount()).isEqualTo(1);
+    assertThat(slowPeer.getRequests().getFirst().response()).isCancelled();
+
+    // So the slow peer must not be scored down for a response we stopped waiting for
+    final SimpleSidecarRetriever.ConnectedPeer slowConnectedPeer =
+        hedgingRetriever.getConnectedPeers().get(slowPeer.getNodeId());
+    assertThat(slowConnectedPeer.getSidecarsRequested()).hasValue(1);
+    assertThat(slowConnectedPeer.getResponseScore()).isEqualTo(10);
+  }
+
+  @Test
   void hedgingShouldRespectOverlapBudget() {
     // 4 pending requests, 25% overlap -> at most 1 concurrent hedged attempt.
     final SimpleSidecarRetriever retriever =

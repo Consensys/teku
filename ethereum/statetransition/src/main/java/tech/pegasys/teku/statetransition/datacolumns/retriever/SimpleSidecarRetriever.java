@@ -378,19 +378,15 @@ public class SimpleSidecarRetriever
     // the column stays pending, with no later timeout to clear it - and with a small per-peer
     // limit that can lock the peer out of serving the request that would have replaced the entry.
     if (isStaleRequest(match.request)
-        || !pendingRequests.containsKey(match.request.columnId)
         // reqRespCompleted removes from attemptingPeers *before* activeRequests, so observing the
         // peer gone here means our put came after (or raced with) that cleanup.
         || !match.request.attemptingPeers.contains(match.peer.nodeId)) {
       // Remove by identity, so a re-dispatch that has already installed a newer attempt for this
       // peer is left untouched.
       match.request.activeRequests.remove(match.peer.nodeId, activeRequest);
-      if (activeRequest.cancel()) {
-        // The RPC was still buffered, so flush() will drop it and it never reaches the network.
-        // Give the peer back the request we charged it above: scoring it down for a request we
-        // withdrew ourselves would push a healthy peer down the selection order.
-        match.peer.discardSidecarRequest();
-      }
+      // If the RPC was still buffered, flush() will drop it and it never reaches the network;
+      // cancel() also gives the peer back the request we charged it above.
+      activeRequest.cancel();
       return false;
     }
     return true;
@@ -474,7 +470,12 @@ public class SimpleSidecarRetriever
   }
 
   private void reqRespSucceeded(final RetrieveRequest request, final DataColumnSidecar sidecar) {
-    if (pendingRequests.remove(request.columnId) != null) {
+    // Removed by value: this request may already be gone from the map and the column re-requested
+    // since (a concurrent attempt can still deliver a sidecar between the removal here and
+    // cancelActiveRequests below). Removing by key alone would evict that newer RetrieveRequest
+    // while completing this one, leaving its caller waiting for a retrieval no round will ever
+    // dispatch again.
+    if (pendingRequests.remove(request.columnId, request)) {
       request.result.completeAsync(sidecar, asyncRunner);
       retrieveCounter.incrementAndGet();
       // cancel any redundant/hedged in-flight attempts for this column
@@ -582,9 +583,9 @@ public class SimpleSidecarRetriever
       long dispatchedAtMillis) {
 
     /**
-     * Abandons this attempt, returning {@code true} if the RPC had not completed yet - i.e. it was
-     * still sitting in the reqResp buffer and {@link DataColumnReqResp#flush()} will now drop it
-     * instead of putting it on the wire.
+     * Abandons this attempt. If the RPC had not completed yet it was still sitting in the reqResp
+     * buffer and {@link DataColumnReqResp#flush()} will now drop it instead of putting it on the
+     * wire.
      *
      * <p>Cancelling {@code promise} alone is not enough: it is a dependent stage, so cancelling it
      * leaves {@code rpcPromise} pending and still queued for the next flush, and the request goes
@@ -592,9 +593,15 @@ public class SimpleSidecarRetriever
      * handling stage is cancelled first so that cancelling the source below does not fire the
      * completion callback and book this as a failed attempt.
      */
-    boolean cancel() {
+    void cancel() {
       promise().cancel(true);
-      return rpcPromise().cancel(true);
+      if (rpcPromise().cancel(true)) {
+        // Give the peer back the request charged at dispatch: we withdrew it, so scoring the peer
+        // down for a response we stopped waiting for would push a healthy peer down the selection
+        // order. Done here because cancelling the handling stage above means the completion
+        // callback - which compensates when the reqResp layer cancels on its own - never runs.
+        peer().discardSidecarRequest();
+      }
     }
   }
 
