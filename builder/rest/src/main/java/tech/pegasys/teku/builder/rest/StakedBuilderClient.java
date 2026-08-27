@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedBuilderRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
 /**
@@ -35,7 +35,7 @@ public interface StakedBuilderClient {
       Bytes32 parentHash,
       Bytes32 parentRoot,
       BLSPublicKey proposerPubkey,
-      Optional<SignedRequestAuth> signedRequestAuth);
+      Optional<SignedBuilderRequestAuth> auth);
 
   SafeFuture<Void> submitBuilderPreferences(
       BLSPublicKey validatorPubkey, BuilderPreferencesRequest builderPreferencesRequest);

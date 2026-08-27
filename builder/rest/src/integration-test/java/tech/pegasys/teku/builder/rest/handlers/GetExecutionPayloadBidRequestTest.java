@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedBuilderRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -86,8 +86,8 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
   }
 
   @TestTemplate
-  void shouldIncludeSignedRequestAuthInBodyWhenPresent() throws Exception {
-    final SignedRequestAuth auth = dataStructureUtil.randomSignedRequestAuth();
+  void shouldIncludeAuthInBodyWhenPresent() throws Exception {
+    final SignedBuilderRequestAuth auth = dataStructureUtil.randomSignedBuilderRequestAuth();
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     request.submit(slot, parentHash, parentRoot, proposerPubkey, Optional.of(auth));
@@ -98,6 +98,8 @@ class GetExecutionPayloadBidRequestTest extends AbstractBuilderRequestTestBase {
 
     final String expectedMilestone = spec.atSlot(slot).getMilestone().lowerCaseName();
     assertThat(recorded.getHeader("Eth-Consensus-Version")).isEqualTo(expectedMilestone);
+    assertThat(recorded.getHeader("Date-Milliseconds")).isNotBlank();
+    assertThat(recorded.getHeader("X-Timeout-Ms")).isNotBlank();
   }
 
   @TestTemplate

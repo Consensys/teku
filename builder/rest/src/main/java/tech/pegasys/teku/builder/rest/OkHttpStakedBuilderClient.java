@@ -27,25 +27,28 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPreferencesRequest;
-import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedRequestAuth;
+import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedBuilderRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
 public class OkHttpStakedBuilderClient implements StakedBuilderClient {
 
-  private final HttpUrl baseEndpoint;
-  private final OkHttpClient httpClient;
   private final AsyncRunner asyncRunner;
-  private final Spec spec;
+  private final GetExecutionPayloadBidRequest getExecutionPayloadBidRequest;
+  private final SubmitBuilderPreferencesRequest submitBuilderPreferencesRequest;
+  private final SubmitSignedBeaconBlockRequest submitSignedBeaconBlockRequest;
 
   public OkHttpStakedBuilderClient(
-      final HttpUrl baseEndpoint,
-      final OkHttpClient httpClient,
       final AsyncRunner asyncRunner,
-      final Spec spec) {
-    this.baseEndpoint = baseEndpoint;
-    this.httpClient = httpClient;
+      final Spec spec,
+      final HttpUrl baseEndpoint,
+      final OkHttpClient httpClient) {
     this.asyncRunner = asyncRunner;
-    this.spec = spec;
+    this.getExecutionPayloadBidRequest =
+        new GetExecutionPayloadBidRequest(spec, baseEndpoint, httpClient);
+    this.submitBuilderPreferencesRequest =
+        new SubmitBuilderPreferencesRequest(spec, baseEndpoint, httpClient);
+    this.submitSignedBeaconBlockRequest =
+        new SubmitSignedBeaconBlockRequest(spec, baseEndpoint, httpClient);
   }
 
   @Override
@@ -54,11 +57,11 @@ public class OkHttpStakedBuilderClient implements StakedBuilderClient {
       final Bytes32 parentHash,
       final Bytes32 parentRoot,
       final BLSPublicKey proposerPubkey,
-      final Optional<SignedRequestAuth> signedRequestAuth) {
+      final Optional<SignedBuilderRequestAuth> auth) {
     return asyncRunner.runAsync(
         () ->
-            new GetExecutionPayloadBidRequest(spec, baseEndpoint, httpClient)
-                .submit(slot, parentHash, parentRoot, proposerPubkey, signedRequestAuth));
+            getExecutionPayloadBidRequest.submit(
+                slot, parentHash, parentRoot, proposerPubkey, auth));
   }
 
   @Override
@@ -66,16 +69,11 @@ public class OkHttpStakedBuilderClient implements StakedBuilderClient {
       final BLSPublicKey validatorPubkey,
       final BuilderPreferencesRequest builderPreferencesRequest) {
     return asyncRunner.runAsync(
-        () ->
-            new SubmitBuilderPreferencesRequest(spec, baseEndpoint, httpClient)
-                .submit(validatorPubkey, builderPreferencesRequest));
+        () -> submitBuilderPreferencesRequest.submit(validatorPubkey, builderPreferencesRequest));
   }
 
   @Override
   public SafeFuture<Void> submitSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
-    return asyncRunner.runAsync(
-        () ->
-            new SubmitSignedBeaconBlockRequest(spec, baseEndpoint, httpClient)
-                .submit(signedBeaconBlock));
+    return asyncRunner.runAsync(() -> submitSignedBeaconBlockRequest.submit(signedBeaconBlock));
   }
 }
