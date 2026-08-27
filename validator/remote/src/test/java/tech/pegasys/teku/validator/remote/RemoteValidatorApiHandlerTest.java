@@ -526,13 +526,15 @@ class RemoteValidatorApiHandlerTest {
             Optional.of(new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(), false)));
 
     // First call: v2 fails, falls back to v1, records that v2 is not supported
-    var unused1 = apiHandler.getProposerDuties(ONE, true);
+    final SafeFuture<Optional<ProposerDuties>> firstCall = apiHandler.getProposerDuties(ONE, true);
     asyncRunner.executeQueuedActions(); // runs v2 → empty → queues v1
     asyncRunner.executeQueuedActions(); // runs v1 (fallback)
+    assertThat(safeJoin(firstCall)).isPresent();
 
     // Second call: goes directly to v1 without trying v2
-    var unused2 = apiHandler.getProposerDuties(ONE, true);
+    final SafeFuture<Optional<ProposerDuties>> secondCall = apiHandler.getProposerDuties(ONE, true);
     asyncRunner.executeQueuedActions(); // runs v1 directly (v2 known-unsupported)
+    assertThat(safeJoin(secondCall)).isPresent();
 
     verify(typeDefClient, times(1)).getProposerDutiesV2(any());
     verify(typeDefClient, times(2)).getProposerDuties(any());
@@ -572,9 +574,11 @@ class RemoteValidatorApiHandlerTest {
     when(typeDefClient.getProposerDuties(earlyEpoch))
         .thenReturn(
             Optional.of(new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(), false)));
-    var unused = gloasHandler.getProposerDuties(earlyEpoch, true);
+    final SafeFuture<Optional<ProposerDuties>> earlyCall =
+        gloasHandler.getProposerDuties(earlyEpoch, true);
     asyncRunner.executeQueuedActions(); // runs v2 → empty → queues v1
     asyncRunner.executeQueuedActions(); // runs v1 (fallback)
+    assertThat(safeJoin(earlyCall)).isPresent();
 
     // Now request within 2 epochs of Gloas — v2 should be tried again (state reset)
     final UInt64 nearGloasEpoch = gloasForkEpoch.minus(1);
