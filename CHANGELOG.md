@@ -23,3 +23,4 @@
  - Fixed a regression where archive nodes using `leveldb-tree` storage would take an extremely long time to start up.
  - Post-Electra, the `committee_index` query parameter in `GET /eth/v1/validator/attestation_data` is now ignored instead of rejected when non-zero, matching the behaviour of other consensus clients.
  - Trigger an immediate peer search when publishing sync committee messages fails because there are no peers available on the required gossip topic.
+ - Fixed gossip wire validator to reject inbound messages containing the `key` field.
