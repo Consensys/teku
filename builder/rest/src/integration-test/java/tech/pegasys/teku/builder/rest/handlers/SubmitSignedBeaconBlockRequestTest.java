@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
-import java.util.Locale;
 import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -85,7 +84,7 @@ class SubmitSignedBeaconBlockRequestTest extends AbstractBuilderRequestTestBase 
 
     final RecordedRequest recorded = mockWebServer.takeRequest();
     final String expectedMilestone =
-        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().name().toLowerCase(Locale.ROOT);
+        spec.atSlot(signedBeaconBlock.getSlot()).getMilestone().lowerCaseName();
     assertThat(recorded.getHeader("Eth-Consensus-Version")).isEqualTo(expectedMilestone);
   }
 

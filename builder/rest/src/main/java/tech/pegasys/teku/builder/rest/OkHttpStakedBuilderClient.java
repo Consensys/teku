@@ -30,14 +30,14 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderPrefe
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.SignedBuilderRequestAuth;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
-public class OkHttpStakedBuilderClient implements StakedBuilderClient {
+class OkHttpStakedBuilderClient implements StakedBuilderClient {
 
   private final AsyncRunner asyncRunner;
   private final GetExecutionPayloadBidRequest getExecutionPayloadBidRequest;
   private final SubmitBuilderPreferencesRequest submitBuilderPreferencesRequest;
   private final SubmitSignedBeaconBlockRequest submitSignedBeaconBlockRequest;
 
-  public OkHttpStakedBuilderClient(
+  OkHttpStakedBuilderClient(
       final AsyncRunner asyncRunner,
       final Spec spec,
       final HttpUrl baseEndpoint,
