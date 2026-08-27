@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 
 public class StubSyncSource implements SyncSource {
 
@@ -144,6 +146,15 @@ public class StubSyncSource implements SyncSource {
       final Bytes32 beaconBlockRoot) {
     executionPayloadEnvelopeByRootRequests.add(beaconBlockRoot);
     return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Void> requestInclusionListsByCommitteeIndices(
+      final UInt64 slot,
+      final Bytes32 dependentRoot,
+      final SszBitvector committeeIndices,
+      final RpcResponseListener<SignedInclusionList> listener) {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

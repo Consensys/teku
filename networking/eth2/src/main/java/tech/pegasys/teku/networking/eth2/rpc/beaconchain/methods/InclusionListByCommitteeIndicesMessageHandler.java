@@ -117,7 +117,8 @@ public class InclusionListByCommitteeIndicesMessageHandler
 
     final AtomicInteger sentInclusionLists = new AtomicInteger(0);
     final List<SignedInclusionList> signedInclusionLists =
-        inclusionListManager.getInclusionLists(message.getSlot(), message.getCommitteeIndices());
+        inclusionListManager.getInclusionLists(
+            message.getSlot(), message.getDependentRoot(), message.getCommitteeIndices());
     SafeFuture<Void> future = SafeFuture.COMPLETE;
     for (SignedInclusionList signedInclusionList : signedInclusionLists) {
       future =

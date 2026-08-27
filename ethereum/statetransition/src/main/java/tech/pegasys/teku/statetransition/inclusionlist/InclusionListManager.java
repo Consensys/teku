@@ -21,8 +21,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -130,7 +132,7 @@ public class InclusionListManager implements SlotEventsChannel {
   }
 
   public List<SignedInclusionList> getInclusionLists(
-      final UInt64 slot, final SszBitvector committeeIndices) {
+      final UInt64 slot, final Bytes32 dependentRoot, final SszBitvector committeeIndices) {
     final Map<UInt64, List<SignedInclusionList>> inclusionListsForSlot =
         slotToInclusionListsByValidatorIndex.getOrDefault(slot, new ConcurrentHashMap<>());
     return inclusionListsForSlot.entrySet().stream()
@@ -138,7 +140,28 @@ public class InclusionListManager implements SlotEventsChannel {
             validatorIndexToInclusionLists ->
                 committeeIndices.isSet(validatorIndexToInclusionLists.getKey().intValue()))
         .flatMap(
-            validatorIndexToInclusionLists -> validatorIndexToInclusionLists.getValue().stream())
+            validatorIndexToInclusionLists -> {
+              final List<SignedInclusionList> matchingInclusionLists =
+                  validatorIndexToInclusionLists.getValue().stream()
+                      .filter(
+                          signedInclusionList ->
+                              signedInclusionList
+                                  .getMessage()
+                                  .getDependentRoot()
+                                  .equals(dependentRoot))
+                      .toList();
+              if (matchingInclusionLists.isEmpty()) {
+                return Stream.empty();
+              }
+              final SignedInclusionList firstInclusionList = matchingInclusionLists.getFirst();
+              // Distinct messages from the same validator for this slot and root are equivocations.
+              return matchingInclusionLists.stream()
+                      .allMatch(
+                          inclusionList ->
+                              inclusionList.getMessage().equals(firstInclusionList.getMessage()))
+                  ? Stream.of(firstInclusionList)
+                  : Stream.empty();
+            })
         .toList();
   }
 

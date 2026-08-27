@@ -27,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
@@ -142,8 +143,8 @@ public class NodeDataProvider {
   }
 
   public List<SignedInclusionList> getInclusionLists(
-      final UInt64 slot, final SszBitvector committeeIndices) {
-    return inclusionListManager.getInclusionLists(slot, committeeIndices);
+      final UInt64 slot, final Bytes32 dependentRoot, final SszBitvector committeeIndices) {
+    return inclusionListManager.getInclusionLists(slot, dependentRoot, committeeIndices);
   }
 
   public ObjectAndMetaData<List<Attestation>> getAttestationsAndMetaData(
