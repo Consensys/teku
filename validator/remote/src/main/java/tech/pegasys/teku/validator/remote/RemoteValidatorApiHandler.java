@@ -98,8 +98,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private final AsyncRunner asyncRunner;
   private final AsyncRunner readinessAsyncRunner; // getPeerCount and getSyncingStatus will use this
   private final AtomicBoolean usePostValidatorsEndpoint;
-  private final AtomicBoolean proposerDutiesV2Supported = new AtomicBoolean(true);
-  private final Optional<UInt64> gloasForkEpoch;
+  private final boolean gloasScheduled;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
@@ -113,10 +112,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     this.readinessAsyncRunner = readinessAsyncRunner;
     this.typeDefClient = typeDefClient;
     this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
-    this.gloasForkEpoch =
-        spec.isMilestoneSupported(SpecMilestone.GLOAS)
-            ? Optional.of(spec.getForkSchedule().getFork(SpecMilestone.GLOAS).getEpoch())
-            : Optional.empty();
+    this.gloasScheduled = spec.isMilestoneSupported(SpecMilestone.GLOAS);
   }
 
   @Override
@@ -224,51 +220,15 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(() -> typeDefClient.postSyncDuties(epoch, validatorIndices));
   }
 
-  // Routing logic for proposer duties:
-  //
-  //  pre-Fulu              → always v1
-  //  Fulu, v2 known-bad    → v1 directly (BN hasn't upgraded yet)
-  //  Fulu, near Gloas      → v2, no fallback (v2 data is required by Gloas duties)
-  //  Fulu, v2 unknown      → try v2; if empty (404), record as known-bad and fall back to v1
-  //
-  // "near Gloas" = within 2 epochs of the Gloas fork, where the duties will execute under Gloas
-  // rules. At that point the v2 payload fields are mandatory and we can no longer silently
-  // degrade. The known-bad flag is also cleared on entry to this window so that the BN gets a
-  // fresh attempt after its upgrade.
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
       final UInt64 epoch, final boolean isFuluCompatible) {
-    if (!isFuluCompatible) {
-      LOG.debug("Calling ProposerDuties");
-      return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
-    }
-    if (isWithinTwoEpochsOfGloas(epoch)) {
-      proposerDutiesV2Supported.set(true);
-      LOG.debug("Calling ProposerDutiesV2");
+    if (gloasScheduled) {
+      LOG.debug("Calling ProposerDutiesV2, epoch: {}", epoch);
       return sendRequest(() -> typeDefClient.getProposerDutiesV2(epoch));
     }
-    if (!proposerDutiesV2Supported.get()) {
-      return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
-    }
-    return sendRequest(() -> typeDefClient.getProposerDutiesV2(epoch))
-        .thenCompose(
-            result -> {
-              if (result.isEmpty()) {
-                LOG.debug(
-                    "v2 proposer duties endpoint not supported by beacon node, falling back to v1");
-                proposerDutiesV2Supported.set(false);
-                LOG.debug("Calling ProposerDuties");
-                return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
-              }
-              return SafeFuture.completedFuture(result);
-            });
-  }
-
-  boolean isWithinTwoEpochsOfGloas(final UInt64 epoch) {
-    return gloasForkEpoch
-        .filter(g -> g.isGreaterThan(UInt64.ONE))
-        .map(g -> epoch.isGreaterThanOrEqualTo(g.minus(2)))
-        .orElse(false);
+    LOG.debug("Calling ProposerDuties, epoch: {}, isFuluCompatible: {}", epoch, isFuluCompatible);
+    return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
   @Override
