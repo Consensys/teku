@@ -213,20 +213,19 @@ public class ForkChoiceUtil {
     LOG.debug("start getProposerHead");
     final ReadOnlyStore store = context.getStore();
     final boolean isProposerBoostActive = isProposerBoostActive(store, headNode.blockRoot());
-    final boolean isShufflingStableAndForkChoiceOk =
-        isForkChoiceStableAndFinalizationOk(store, slot);
+    final boolean isProposerHeadReorgAllowed = isProposerHeadReorgAllowed(store, slot);
     final boolean isProposingOnTime = isProposingOnTime(store, slot);
     final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headNode.blockRoot()));
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headNode.blockRoot());
     if (!isHeadLate
-        || !isShufflingStableAndForkChoiceOk
+        || !isProposerHeadReorgAllowed
         || !isProposingOnTime
         || isProposerBoostActive
         || maybeHead.isEmpty()) {
       LOG.debug(
-          "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
+          "getProposerHead - return headRoot - isHeadLate {}, isProposerHeadReorgAllowed {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
           isHeadLate,
-          isShufflingStableAndForkChoiceOk,
+          isProposerHeadReorgAllowed,
           isProposingOnTime,
           isProposerBoostActive,
           maybeHead.isEmpty());
@@ -376,6 +375,10 @@ public class ForkChoiceUtil {
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
     return isShufflingStable(slot) && isFinalizationOk(store, slot);
+  }
+
+  protected boolean isProposerHeadReorgAllowed(final ReadOnlyStore store, final UInt64 slot) {
+    return isForkChoiceStableAndFinalizationOk(store, slot);
   }
 
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {

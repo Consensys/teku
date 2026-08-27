@@ -5268,6 +5268,8 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public ForkChoiceNode getProposerHead(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/util/ForkChoiceUtilFulu.java
+      search: protected boolean isProposerHeadReorgAllowed(
   spec: |
     <spec fn="get_proposer_head" fork="fulu" hash="b8612966">
     def get_proposer_head(store: Store, head_node: ForkChoiceNode, slot: Slot) -> ForkChoiceNode:

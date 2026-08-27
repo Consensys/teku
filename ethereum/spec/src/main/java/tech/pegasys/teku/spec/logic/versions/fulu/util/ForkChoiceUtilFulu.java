@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
@@ -57,6 +58,11 @@ public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
   @Override
   public boolean isDataAvailabilityRequiredForTimeliness() {
     return true;
+  }
+
+  @Override
+  protected boolean isProposerHeadReorgAllowed(final ReadOnlyStore store, final UInt64 slot) {
+    return isFinalizationOk(store, slot);
   }
 
   @Override
