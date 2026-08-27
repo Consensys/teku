@@ -15,7 +15,6 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
@@ -30,11 +29,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -48,24 +44,15 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
-import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
-import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
@@ -73,12 +60,7 @@ import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValida
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
@@ -113,44 +95,15 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
                             blockEntry.getBlock() + ".ssz_snappy",
                             spec::deserializeSignedBeaconBlock)))
             .toList();
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-    final StorageSystem storageSystem =
-        InMemoryStorageSystemBuilder.create()
-            .specProvider(spec)
-            .storageMode(StateStorageMode.ARCHIVE)
-            .build();
-    final RecentChainData recentChainData = storageSystem.recentChainData();
-
-    final AnchorPoint anchorPoint =
-        createAnchorFromStateAndMatchingBlock(
+    final GossipTestContext ctx =
+        GossipTestContext.create(
             spec,
             state,
             blocks.stream()
                 .filter(b -> !b.blockEntry().isFailed())
                 .map(BlockEntryAndBlock::block)
                 .toList());
-    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
-
-    final InlineEventThread eventThread = new InlineEventThread();
-    final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData);
-    final ForkChoice forkChoice =
-        new ForkChoice(
-            spec,
-            eventThread,
-            recentChainData,
-            new NoopForkChoiceNotifier(),
-            new ForkChoiceStateProvider(eventThread, recentChainData),
-            new TickProcessor(spec, recentChainData),
-            transitionBlockValidator,
-            FastConfirmationTracker.NOOP,
-            true,
-            LateBlockReorgPreparationHandler.NOOP,
-            DebugDataDumper.NOOP,
-            metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));
-    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
 
@@ -158,7 +111,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
       final GossipExecutionPayloadBidMetaData.BlockEntry blockEntry =
           blockEntryAndBlock.blockEntry();
       final SignedBeaconBlock block = blockEntryAndBlock.block();
-      if (block.getRoot().equals(anchorPoint.getRoot())) {
+      if (block.getRoot().equals(ctx.anchorPoint.getRoot())) {
         continue;
       }
       // Advance the fork choice clock enough to import this block's slot. Some tests validate
@@ -166,12 +119,12 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
       // slot start here rather than to current_time_ms. The gossip validation time is controlled
       // separately via the per-message helper below.
       final UInt64 blockSlotStartMs =
-          spec.computeTimeMillisAtSlot(block.getSlot(), recentChainData.getGenesisTimeMillis());
-      forkChoice.onTick(blockSlotStartMs, Optional.empty());
+          spec.computeTimeMillisAtSlot(block.getSlot(), ctx.recentChainData.getGenesisTimeMillis());
+      ctx.forkChoice.onTick(blockSlotStartMs, Optional.empty());
       final BlockImportResult importResult =
           safeJoin(
-              forkChoice.onBlock(
-                  block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+              ctx.forkChoice.onBlock(
+                  block, Optional.empty(), BlockBroadcastValidator.NOOP, ctx.executionLayer));
       if (blockEntry.isFailed()) {
         invalidBlockRoots.put(
             block.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
@@ -190,8 +143,8 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
         if (Files.exists(envelopeFile)) {
           applyExecutionPayloadToStore(
               spec,
-              recentChainData,
-              forkChoice,
+              ctx.recentChainData,
+              ctx.forkChoice,
               loadSsz(
                   testDefinition,
                   blockEntry.getPayload() + ".ssz_snappy",
@@ -233,7 +186,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
             .map(checkpoint -> checkpoint.toCheckpoint(testDefinition, spec));
 
     final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, metricsSystem) {
+        new GossipValidationHelper(spec, ctx.recentChainData, ctx.metricsSystem) {
           @Override
           public UInt64 getCurrentTimeMillis() {
             return validationTimeMs[0];
@@ -309,7 +262,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
         };
 
     final ProposerPreferencesGossipValidator preferencesValidator =
-        new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, recentChainData);
+        new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, ctx.recentChainData);
     final ExecutionPayloadGossipValidator envelopeValidator =
         new ExecutionPayloadGossipValidator(
             spec, gossipValidationHelper, blockGossipValidator, invalidBlockRoots);
@@ -319,7 +272,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
 
     for (final GossipExecutionPayloadBidMetaData.Message message : metaData.getMessages()) {
       validationTimeMs[0] = UInt64.valueOf(message.getCurrentTimeMs());
-      forkChoice.onTick(UInt64.valueOf(message.getCurrentTimeMs()), Optional.empty());
+      ctx.forkChoice.onTick(UInt64.valueOf(message.getCurrentTimeMs()), Optional.empty());
 
       final String messageName = message.getMessage();
       final InternalValidationResult result;
@@ -341,7 +294,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
         if (result.isAccept()) {
           final ExecutionPayload payload = signedEnvelope.getMessage().getPayload();
           seenExecutionPayloadGasLimits.put(payload.getBlockHash(), payload.getGasLimit());
-          applyExecutionPayloadToStore(spec, recentChainData, forkChoice, signedEnvelope);
+          applyExecutionPayloadToStore(spec, ctx.recentChainData, ctx.forkChoice, signedEnvelope);
         }
       } else if (messageName.startsWith("execution_payload_bid_")) {
         final SignedExecutionPayloadBid signedBid =
@@ -351,32 +304,8 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
         throw new AssertionError("Unknown message type for: " + messageName);
       }
 
-      switch (message.getExpected()) {
-        case "valid" ->
-            assertThat(result.code())
-                .describedAs(
-                    "Expected message %s to be valid but got %s: %s",
-                    messageName, result.code(), result.getDescription().orElse(""))
-                .isEqualTo(ValidationResultCode.ACCEPT);
-        case "reject" ->
-            assertThat(result.code())
-                .describedAs(
-                    "Expected message %s to be rejected but got %s: %s",
-                    messageName, result.code(), result.getDescription().orElse(""))
-                .isEqualTo(ValidationResultCode.REJECT);
-        case "ignore" ->
-            assertThat(result.code())
-                .describedAs(
-                    "Expected message %s to be ignored but got %s: %s",
-                    messageName, result.code(), result.getDescription().orElse(""))
-                .isIn(ValidationResultCode.IGNORE, ValidationResultCode.SAVE_FOR_FUTURE);
-        default ->
-            throw new AssertionError(
-                "Unexpected expected value: "
-                    + message.getExpected()
-                    + " for message: "
-                    + messageName);
-      }
+      GossipTestContext.assertValidationResult(
+          "message " + messageName, message.getExpected(), result);
     }
   }
 
@@ -427,7 +356,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
     private int blsSetting;
 
     @JsonProperty(value = "finalized_checkpoint")
-    private FinalizedCheckpoint finalizedCheckpoint;
+    private GossipTestContext.FinalizedCheckpoint finalizedCheckpoint;
 
     public List<BlockEntry> getBlocks() {
       return blocks;
@@ -445,7 +374,7 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
       return BlsSetting.forCode(blsSetting);
     }
 
-    public FinalizedCheckpoint getFinalizedCheckpoint() {
+    public GossipTestContext.FinalizedCheckpoint getFinalizedCheckpoint() {
       return finalizedCheckpoint;
     }
 
@@ -499,38 +428,6 @@ public class GossipExecutionPayloadBidTestExecutor implements TestExecutor {
 
       public String getExpected() {
         return expected;
-      }
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class FinalizedCheckpoint {
-
-      @JsonProperty(value = "epoch", required = true)
-      private long epoch;
-
-      @JsonProperty(value = "root")
-      private String root;
-
-      @JsonProperty(value = "block")
-      private String block;
-
-      public String getBlock() {
-        return block;
-      }
-
-      public Checkpoint toCheckpoint(final TestDefinition testDefinition, final Spec spec) {
-        final Bytes32 checkpointRoot;
-        if (root != null) {
-          checkpointRoot = Bytes32.fromHexString(root);
-        } else if (block != null) {
-          final SignedBeaconBlock signedBlock =
-              loadSsz(testDefinition, block + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
-          checkpointRoot = signedBlock.getRoot();
-        } else {
-          throw new IllegalStateException(
-              "finalized_checkpoint must specify either 'root' or 'block'");
-        }
-        return new Checkpoint(UInt64.valueOf(epoch), checkpointRoot);
       }
     }
   }
