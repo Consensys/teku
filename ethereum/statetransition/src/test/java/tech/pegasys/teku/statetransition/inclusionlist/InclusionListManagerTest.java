@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
@@ -56,14 +57,42 @@ class InclusionListManagerTest {
         .containsExactly(expected);
   }
 
+  @Test
+  void shouldNotReturnListsFromEquivocatingValidator() {
+    final UInt64 slot = UInt64.ONE;
+    final UInt64 validatorIndex = UInt64.ONE;
+    final Bytes32 dependentRoot = dataStructureUtil.randomBytes32();
+    inclusionListManager.add(createSignedInclusionList(slot, validatorIndex, dependentRoot));
+    inclusionListManager.add(
+        createSignedInclusionList(
+            slot,
+            validatorIndex,
+            dependentRoot,
+            List.of(dataStructureUtil.randomExecutionPayloadTransaction())));
+    final int committeeSize =
+        SpecConfigHeze.required(spec.atSlot(slot).getConfig()).getInclusionListCommitteeSize();
+    final SszBitvector requestedIndices = SszBitvectorSchema.create(committeeSize).ofBits(1);
+
+    assertThat(inclusionListManager.getInclusionLists(slot, dependentRoot, requestedIndices))
+        .isEmpty();
+  }
+
   private SignedInclusionList createSignedInclusionList(
       final UInt64 slot, final UInt64 validatorIndex, final Bytes32 dependentRoot) {
+    return createSignedInclusionList(slot, validatorIndex, dependentRoot, List.of());
+  }
+
+  private SignedInclusionList createSignedInclusionList(
+      final UInt64 slot,
+      final UInt64 validatorIndex,
+      final Bytes32 dependentRoot,
+      final List<Transaction> transactions) {
     final SchemaDefinitionsHeze schemaDefinitions =
         SchemaDefinitionsHeze.required(spec.atSlot(slot).getSchemaDefinitions());
     final InclusionList inclusionList =
         schemaDefinitions
             .getInclusionListSchema()
-            .create(slot, validatorIndex, dependentRoot, List.of());
+            .create(slot, validatorIndex, dependentRoot, transactions);
     return schemaDefinitions
         .getSignedInclusionListSchema()
         .create(inclusionList, dataStructureUtil.randomSignature());
