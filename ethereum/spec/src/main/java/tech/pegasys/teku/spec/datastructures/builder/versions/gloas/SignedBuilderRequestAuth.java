@@ -14,27 +14,35 @@
 package tech.pegasys.teku.spec.datastructures.builder.versions.gloas;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedRequestAuthSchema
-    extends ContainerSchema2<SignedRequestAuth, RequestAuth, SszSignature> {
+public class SignedBuilderRequestAuth
+    extends Container2<SignedBuilderRequestAuth, BuilderRequestAuth, SszSignature> {
 
-  public SignedRequestAuthSchema(final RequestAuthSchema requestAuthSchema) {
-    super(
-        "SignedRequestAuthV1",
-        namedSchema("message", requestAuthSchema),
-        namedSchema("signature", SszSignatureSchema.INSTANCE));
+  SignedBuilderRequestAuth(
+      final SignedBuilderRequestAuthSchema schema,
+      final BuilderRequestAuth message,
+      final BLSSignature signature) {
+    super(schema, message, new SszSignature(signature));
   }
 
-  public SignedRequestAuth create(final RequestAuth message, final BLSSignature signature) {
-    return new SignedRequestAuth(this, message, signature);
+  SignedBuilderRequestAuth(
+      final SignedBuilderRequestAuthSchema schema, final TreeNode backingNode) {
+    super(schema, backingNode);
+  }
+
+  public BuilderRequestAuth getMessage() {
+    return getField0();
+  }
+
+  public BLSSignature getSignature() {
+    return getField1().getSignature();
   }
 
   @Override
-  public SignedRequestAuth createFromBackingNode(final TreeNode node) {
-    return new SignedRequestAuth(this, node);
+  public SignedBuilderRequestAuthSchema getSchema() {
+    return (SignedBuilderRequestAuthSchema) super.getSchema();
   }
 }
