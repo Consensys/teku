@@ -72,6 +72,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeCo
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetExecutionPayloadEnvelopeRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesV2Request;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
@@ -125,6 +126,12 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final GetProposerDutiesRequest getProposerDutiesRequest =
         new GetProposerDutiesRequest(getBaseEndpoint(), getOkHttpClient());
     return getProposerDutiesRequest.submit(epoch);
+  }
+
+  public Optional<ProposerDuties> getProposerDutiesV2(final UInt64 epoch) {
+    final GetProposerDutiesV2Request getProposerDutiesV2Request =
+        new GetProposerDutiesV2Request(getBaseEndpoint(), getOkHttpClient());
+    return getProposerDutiesV2Request.submit(epoch);
   }
 
   public Optional<PeerCount> getPeerCount() {
