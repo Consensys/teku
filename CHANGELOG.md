@@ -18,6 +18,7 @@
  - Improved debug/beacon/states endpoint to allow searching of the finalized state root, to assist third party products searching on roots.
 
 ### Bug Fixes
+ - Fixed validator duties for the first epoch of a fork scheduled after genesis failing with `Expected a Gloas state but got: BeaconStateFuluImpl`, which left validators without attestation duties for that epoch.
  - Fixed startup from a Gloas genesis state (e.g. a devnet with `GLOAS_FORK_EPOCH: 0`), which failed with `Genesis block root ... does not match genesis state latest block root`. The Gloas genesis block body now embeds the state's `latest_execution_payload_bid`, matching the ethpandaops genesis generator, Lighthouse and Lodestar.
  - Fixed `data_column_sidecar` gossip decoding to use the schema of the topic's fork instead of the highest supported milestone. Previously, on networks with Gloas scheduled, every Fulu-era column sidecar received via gossip failed deserialization.
  - Validate `BeaconBlocksByRoot` responses against the requested block roots before accepting them.
