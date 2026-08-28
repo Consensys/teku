@@ -215,6 +215,7 @@ import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesMan
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidCircuitBreaker;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidSelector;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.FailedExecutionPayloadPool;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
@@ -1036,6 +1037,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
           beaconConfig
               .executionPayloadBidCircuitBreakerFactory()
               .create(recentChainData::getForkChoiceStrategy);
+      final ExecutionPayloadBidSelector executionPayloadBidSelector =
+          new ExecutionPayloadBidSelector(
+              beaconConfig.executionLayerConfig().getUseShouldOverrideBuilderFlag(),
+              executionPayloadBidCircuitBreaker);
       final DefaultExecutionPayloadBidManager defaultExecutionPayloadBidManager =
           new DefaultExecutionPayloadBidManager(
               spec,
@@ -1043,8 +1048,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadBidCircuitBreaker,
               receivedExecutionPayloadBidEventsChannelPublisher,
               poolFactory.createPendingPoolForExecutionPayloadBids(spec),
-              beaconConfig.executionLayerConfig().getBuilderBidCompareFactor(),
-              beaconConfig.executionLayerConfig().getUseShouldOverrideBuilderFlag());
+              executionPayloadBidSelector);
       proposerPreferencesManager.subscribeOperationAdded(defaultExecutionPayloadBidManager);
       eventChannels.subscribe(SlotEventsChannel.class, defaultExecutionPayloadBidManager);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, defaultExecutionPayloadBidManager);
@@ -1176,7 +1180,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyCountSupplier,
             dasRpc,
             dasAsyncRunner,
-            Duration.ofSeconds(1));
+            timeProvider,
+            beaconConfig.p2pConfig().getSidecarRetrievalOverlapFraction());
 
     simpleSidecarRetriever = Optional.of(sidecarRetriever);
 

@@ -391,7 +391,16 @@ public class BatchSync implements Sync {
               final SafeFuture<BatchImportResult> importFuture = batchImporter.importBatch(batch);
               importingBatchFuture = Optional.of(importFuture);
               importFuture
-                  .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
+                  .handleAsync(
+                      (result, error) -> {
+                        if (error != null) {
+                          onImportFailed(batch, error);
+                        } else {
+                          onImportComplete(result, batch);
+                        }
+                        return null;
+                      },
+                      eventThread)
                   .propagateExceptionTo(syncResult);
             });
   }
@@ -414,6 +423,23 @@ public class BatchSync implements Sync {
 
   private void markBatchesAsContested(final NavigableSet<Batch> contestedBatches) {
     contestedBatches.forEach(Batch::markAsContested);
+  }
+
+  /**
+   * Handles an import which completed exceptionally, for example because it failed unexpectedly.
+   * The batch didn't import, so it is handled as any other failed import - importing state has to
+   * be released either way, otherwise the sync would wait forever for an import that already
+   * finished.
+   */
+  private void onImportFailed(final Batch importedBatch, final Throwable error) {
+    eventThread.checkOnEventThread();
+    if (!isCurrentlyImportingBatch(importedBatch)) {
+      // already released, e.g. the sync was aborted which cancelled the import
+      return;
+    }
+    // an import should never fail exceptionally, so make it visible rather than only retrying
+    LOG.warn("Import of batch {} failed unexpectedly", importedBatch, error);
+    onImportComplete(BatchImportResult.IMPORT_FAILED, importedBatch);
   }
 
   private void onImportComplete(
@@ -448,7 +474,11 @@ public class BatchSync implements Sync {
     } else if (result == BatchImportResult.EXECUTION_CLIENT_OFFLINE
         || result == BatchImportResult.DATA_NOT_AVAILABLE) {
       if (!scheduledProgressSync) {
-        LOG.warn("Unable to import blocks: {}", result);
+        LOG.warn(
+            "Unable to import blocks ({} - {}): {}",
+            importedBatch.getFirstSlot(),
+            importedBatch.getLastSlot(),
+            result);
         asyncRunner
             .runAfterDelay(
                 () ->

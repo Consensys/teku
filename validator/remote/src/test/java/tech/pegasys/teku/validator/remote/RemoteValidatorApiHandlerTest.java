@@ -110,7 +110,7 @@ class RemoteValidatorApiHandlerTest {
   public void beforeEach() {
     apiHandler =
         new RemoteValidatorApiHandler(
-            endpoint, typeDefClient, asyncRunner, readinessAsyncRunner, true);
+            endpoint, spec, typeDefClient, asyncRunner, readinessAsyncRunner, true);
   }
 
   @Test
@@ -456,6 +456,25 @@ class RemoteValidatorApiHandlerTest {
 
     assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
     assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.getDependentRoot());
+  }
+
+  @Test
+  public void getProposerDuties_WhenGloasScheduled_UsesV2() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.valueOf(100));
+    final RemoteValidatorApiHandler gloasHandler =
+        new RemoteValidatorApiHandler(
+            endpoint, gloasSpec, typeDefClient, asyncRunner, readinessAsyncRunner, true);
+
+    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
+    final ProposerDuties response =
+        new ProposerDuties(
+            Bytes32.fromHexString("0x5678"),
+            List.of(new ProposerDuty(blsPublicKey, 1, UInt64.ZERO)),
+            false);
+    when(typeDefClient.getProposerDutiesV2(ONE)).thenReturn(Optional.of(response));
+
+    assertThat(unwrapToValue(gloasHandler.getProposerDuties(ONE, true))).isEqualTo(response);
+    verify(typeDefClient, times(0)).getProposerDuties(any());
   }
 
   @Test

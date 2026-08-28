@@ -15,7 +15,6 @@ package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.reference.TestDataUtils.createAnchorFromStateAndMatchingBlock;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
@@ -24,10 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -35,31 +31,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
-import tech.pegasys.teku.spec.datastructures.forkchoice.InclusionListStore;
-import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
-import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
-import tech.pegasys.teku.statetransition.forkchoice.fastconfirmation.FastConfirmationTracker;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
-import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class GossipProposerPreferencesTestExecutor implements TestExecutor {
 
@@ -82,53 +60,21 @@ public class GossipProposerPreferencesTestExecutor implements TestExecutor {
                             blockEntry.getBlock() + ".ssz_snappy",
                             spec::deserializeSignedBeaconBlock)))
             .toList();
-    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-    final StorageSystem storageSystem =
-        InMemoryStorageSystemBuilder.create()
-            .specProvider(spec)
-            .storageMode(StateStorageMode.ARCHIVE)
-            .build();
-    final RecentChainData recentChainData = storageSystem.recentChainData();
-
-    final AnchorPoint anchorPoint =
-        createAnchorFromStateAndMatchingBlock(
+    final GossipTestContext ctx =
+        GossipTestContext.create(
             spec,
             state,
             blocks.stream()
                 .filter(b -> !b.blockEntry().isFailed() && !b.blockEntry().isPending())
                 .map(BlockEntryAndBlock::block)
                 .toList());
-    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
-
-    final InlineEventThread eventThread = new InlineEventThread();
-    final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData);
-    final InclusionListStore inclusionListStore =
-        new InclusionListStore(StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE);
-    final ForkChoice forkChoice =
-        new ForkChoice(
-            spec,
-            eventThread,
-            recentChainData,
-            inclusionListStore,
-            new NoopForkChoiceNotifier(),
-            new ForkChoiceStateProvider(eventThread, recentChainData),
-            new TickProcessor(spec, recentChainData),
-            transitionBlockValidator,
-            FastConfirmationTracker.NOOP,
-            true,
-            LateBlockReorgPreparationHandler.NOOP,
-            DebugDataDumper.NOOP,
-            metricsSystem,
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));
-    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     for (final BlockEntryAndBlock blockEntryAndBlock : blocks) {
       final GossipProposerPreferencesMetaData.BlockEntry blockEntry =
           blockEntryAndBlock.blockEntry();
       final SignedBeaconBlock block = blockEntryAndBlock.block();
-      if (block.getRoot().equals(anchorPoint.getRoot())) {
+      if (block.getRoot().equals(ctx.anchorPoint.getRoot())) {
         continue;
       }
       // A pending block is one pyspec added to store.blocks without adding its post-state to
@@ -143,12 +89,12 @@ public class GossipProposerPreferencesTestExecutor implements TestExecutor {
       // tick to the slot start here rather than to current_time_ms. The gossip validation time is
       // controlled separately via the per-message helper below.
       final UInt64 blockSlotStartMs =
-          spec.computeTimeMillisAtSlot(block.getSlot(), recentChainData.getGenesisTimeMillis());
-      forkChoice.onTick(blockSlotStartMs, Optional.empty());
+          spec.computeTimeMillisAtSlot(block.getSlot(), ctx.recentChainData.getGenesisTimeMillis());
+      ctx.forkChoice.onTick(blockSlotStartMs, Optional.empty());
       final BlockImportResult importResult =
           safeJoin(
-              forkChoice.onBlock(
-                  block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer));
+              ctx.forkChoice.onBlock(
+                  block, Optional.empty(), BlockBroadcastValidator.NOOP, ctx.executionLayer));
       if (!blockEntry.isFailed()) {
         assertThat(importResult.isSuccessful())
             .describedAs("Expected setup block %s to import successfully", blockEntry.getBlock())
@@ -162,7 +108,7 @@ public class GossipProposerPreferencesTestExecutor implements TestExecutor {
     // messages are validated at a time before that slot starts.
     final UInt64[] validationTimeMs = {UInt64.valueOf(metaData.getCurrentTimeMs())};
     final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, metricsSystem) {
+        new GossipValidationHelper(spec, ctx.recentChainData, ctx.metricsSystem) {
           @Override
           public UInt64 getCurrentTimeMillis() {
             return validationTimeMs[0];
@@ -172,43 +118,19 @@ public class GossipProposerPreferencesTestExecutor implements TestExecutor {
         SchemaDefinitionsGloas.required(spec.atSlot(state.getSlot()).getSchemaDefinitions())
             .getSignedProposerPreferencesSchema();
     final ProposerPreferencesGossipValidator validator =
-        new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, recentChainData);
+        new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, ctx.recentChainData);
 
     for (final GossipProposerPreferencesMetaData.Message message : metaData.getMessages()) {
       validationTimeMs[0] = UInt64.valueOf(message.getCurrentTimeMs());
-      forkChoice.onTick(UInt64.valueOf(message.getCurrentTimeMs()), Optional.empty());
+      ctx.forkChoice.onTick(UInt64.valueOf(message.getCurrentTimeMs()), Optional.empty());
 
       final SignedProposerPreferences signedProposerPreferences =
           loadSsz(testDefinition, message.getMessage() + ".ssz_snappy", schema::sszDeserialize);
       final InternalValidationResult result =
           safeJoin(validator.validate(signedProposerPreferences));
 
-      switch (message.getExpected()) {
-        case "valid" ->
-            assertThat(result.code())
-                .describedAs(
-                    "Expected proposer preferences %s to be valid but got %s: %s",
-                    message.getMessage(), result.code(), result.getDescription().orElse(""))
-                .isEqualTo(ValidationResultCode.ACCEPT);
-        case "reject" ->
-            assertThat(result.code())
-                .describedAs(
-                    "Expected proposer preferences %s to be rejected but got %s: %s",
-                    message.getMessage(), result.code(), result.getDescription().orElse(""))
-                .isEqualTo(ValidationResultCode.REJECT);
-        case "ignore" ->
-            assertThat(result.code())
-                .describedAs(
-                    "Expected proposer preferences %s to be ignored but got %s: %s",
-                    message.getMessage(), result.code(), result.getDescription().orElse(""))
-                .isIn(ValidationResultCode.IGNORE, ValidationResultCode.SAVE_FOR_FUTURE);
-        default ->
-            throw new AssertionError(
-                "Unexpected expected value: "
-                    + message.getExpected()
-                    + " for message: "
-                    + message.getMessage());
-      }
+      GossipTestContext.assertValidationResult(
+          "proposer preferences " + message.getMessage(), message.getExpected(), result);
     }
   }
 
