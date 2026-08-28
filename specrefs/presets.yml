@@ -394,6 +394,15 @@
     MAX_SEED_LOOKAHEAD: Epoch = 4
     </spec>
 
+- name: MAX_SIGNED_INCLUSION_LIST_SIZE#heze
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/heze.yaml
+      search: "MAX_SIGNED_INCLUSION_LIST_SIZE:"
+  spec: |
+    <spec preset_var="MAX_SIGNED_INCLUSION_LIST_SIZE" fork="heze" hash="805b7bca">
+    MAX_SIGNED_INCLUSION_LIST_SIZE: Uint64 = 8348
+    </spec>
+
 - name: MAX_TRANSACTIONS_PER_PAYLOAD#bellatrix
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/bellatrix.yaml

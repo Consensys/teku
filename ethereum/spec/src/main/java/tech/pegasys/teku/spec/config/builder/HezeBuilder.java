@@ -32,6 +32,7 @@ public class HezeBuilder extends BaseForkBuilder
 
   // heze preset
   private Integer inclusionListCommitteeSize;
+  private Integer maxSignedInclusionListSize;
 
   HezeBuilder() {}
 
@@ -44,6 +45,7 @@ public class HezeBuilder extends BaseForkBuilder
             inclusionListDueBps,
             maxRequestInclusionList,
             maxTransactionsBytesPerInclusionList,
+            maxSignedInclusionListSize,
             inclusionListCommitteeSize),
         specConfigAndParent);
   }
@@ -73,6 +75,12 @@ public class HezeBuilder extends BaseForkBuilder
     return this;
   }
 
+  public HezeBuilder maxSignedInclusionListSize(final Integer maxSignedInclusionListSize) {
+    checkNotNull(maxSignedInclusionListSize);
+    this.maxSignedInclusionListSize = maxSignedInclusionListSize;
+    return this;
+  }
+
   @Override
   public void validate() {
     defaultValuesIfRequired(this);
@@ -86,9 +94,12 @@ public class HezeBuilder extends BaseForkBuilder
     constants.put("maxRequestInclusionList", maxRequestInclusionList);
     constants.put("maxTransactionsBytesPerInclusionList", maxTransactionsBytesPerInclusionList);
     constants.put("inclusionListCommitteeSize", inclusionListCommitteeSize);
+    constants.put("maxSignedInclusionListSize", maxSignedInclusionListSize);
     return constants;
   }
 
   @Override
-  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
+    rawConfig.accept("MAX_SIGNED_INCLUSION_LIST_SIZE", maxSignedInclusionListSize);
+  }
 }

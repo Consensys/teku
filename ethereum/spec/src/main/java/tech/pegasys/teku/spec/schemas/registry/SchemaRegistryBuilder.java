@@ -1485,7 +1485,13 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createSignedInclusionListSchemaProvider() {
     return providerBuilder(SIGNED_INCLUSION_LIST_SCHEMA)
-        .withCreator(HEZE, (registry, _, _) -> new SignedInclusionListSchema(registry))
+        .withCreator(
+            HEZE,
+            (registry, specConfig, _) ->
+                new SignedInclusionListSchema(
+                    registry,
+                    OptionalLong.of(
+                        SpecConfigHeze.required(specConfig).getMaxSignedInclusionListSize())))
         .build();
   }
 

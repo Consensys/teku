@@ -18,4 +18,6 @@ public interface NetworkingSpecConfigHeze extends NetworkingSpecConfigGloas {
   int getMaxRequestInclusionList();
 
   int getMaxTransactionsBytesPerInclusionList();
+
+  int getMaxSignedInclusionListSize();
 }

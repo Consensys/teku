@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 class NetworkSszLengthBoundsTest {
 
@@ -45,6 +46,15 @@ class NetworkSszLengthBoundsTest {
     assertThat(attestationSchema.getNetworkSszLengthBytesUpperBound().isEmpty()).isTrue();
     assertThat(attestationSchema.getNetworkSszLengthBounds())
         .isEqualTo(attestationSchema.getSszLengthBounds());
+  }
+
+  @Test
+  void hezeSignedInclusionListAppliesConfiguredNetworkBound() {
+    final Spec hezeSpec = TestSpecFactory.createMinimalHeze();
+    final SchemaDefinitionsHeze hezeSchemaDefinitions =
+        SchemaDefinitionsHeze.required(hezeSpec.getGenesisSchemaDefinitions());
+
+    assertNetworkBound(hezeSchemaDefinitions.getSignedInclusionListSchema(), 41_112);
   }
 
   private void assertNetworkBound(final SszType schema, final long expectedMaxBytes) {

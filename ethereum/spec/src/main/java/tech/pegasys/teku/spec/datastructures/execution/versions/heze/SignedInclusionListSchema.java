@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.heze;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
 
+import java.util.OptionalLong;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -25,11 +26,25 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 public class SignedInclusionListSchema
     extends ContainerSchema2<SignedInclusionList, InclusionList, SszSignature> {
 
+  private final OptionalLong networkSszLengthBytesUpperBound;
+
   public SignedInclusionListSchema(final SchemaRegistry schemaRegistry) {
+    this(schemaRegistry, OptionalLong.empty());
+  }
+
+  public SignedInclusionListSchema(
+      final SchemaRegistry schemaRegistry, final OptionalLong networkSszLengthBytesUpperBound) {
     super(
         "SignedInclusionList",
         namedSchema("message", schemaRegistry.get(INCLUSION_LIST_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
+    this.networkSszLengthBytesUpperBound = networkSszLengthBytesUpperBound;
+    validateNetworkSszLengthBytesUpperBound();
+  }
+
+  @Override
+  public OptionalLong getNetworkSszLengthBytesUpperBound() {
+    return networkSszLengthBytesUpperBound;
   }
 
   public SignedInclusionList create(final InclusionList message, final BLSSignature signature) {
