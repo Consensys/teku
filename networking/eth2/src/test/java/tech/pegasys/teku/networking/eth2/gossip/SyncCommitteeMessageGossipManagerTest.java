@@ -21,6 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -132,7 +133,24 @@ class SyncCommitteeMessageGossipManagerTest {
     gossipManager.publish(message);
 
     verify(peerSearchRequester).run();
-    assertThat(peerSearchRequestedCount()).isEqualTo(1);
+    assertThat(peerSearchRequestedCount("no_peers")).isEqualTo(1);
+    assertThat(peerSearchRequestedCount("no_outbound_stream")).isZero();
+  }
+
+  @Test
+  void shouldRequestPeerSearchWhenNoOutboundStreamIsAvailableForSyncCommitteeSubnet() {
+    final int subnetId = 3;
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromNetwork(
+            dataStructureUtil.randomSyncCommitteeMessage(), subnetId);
+    when(subnetSubscriptions.gossip(message.getMessage(), subnetId))
+        .thenReturn(SafeFuture.failedFuture(new SemiDuplexNoOutboundStreamException("no stream")));
+
+    gossipManager.publish(message);
+
+    verify(peerSearchRequester).run();
+    assertThat(peerSearchRequestedCount("no_outbound_stream")).isEqualTo(1);
+    assertThat(peerSearchRequestedCount("no_peers")).isZero();
   }
 
   @Test
@@ -147,12 +165,13 @@ class SyncCommitteeMessageGossipManagerTest {
     gossipManager.publish(message);
 
     verify(peerSearchRequester, never()).run();
-    assertThat(peerSearchRequestedCount()).isZero();
+    assertThat(peerSearchRequestedCount("no_peers")).isZero();
+    assertThat(peerSearchRequestedCount("no_outbound_stream")).isZero();
   }
 
-  private long peerSearchRequestedCount() {
-    return metricsSystem.getCounterValue(
-        TekuMetricCategory.BEACON, "sync_committee_message_peer_search_requested_total");
+  private long peerSearchRequestedCount(final String reason) {
+    return metricsSystem.getLabelledCounterValue(
+        TekuMetricCategory.BEACON, "sync_committee_message_peer_search_requested_total", reason);
   }
 
   private void withApplicableSubnets(

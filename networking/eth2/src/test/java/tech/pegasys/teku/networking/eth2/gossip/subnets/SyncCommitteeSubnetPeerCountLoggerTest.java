@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -92,7 +93,7 @@ class SyncCommitteeSubnetPeerCountLoggerTest {
 
       logger.onSubscriptionsUpdated(subscriptions, CONNECTED_PEER_COUNT);
 
-      assertThat(logCaptor.getWarnLogs()).hasSize(4);
+      assertThat(logCaptor.getWarnLogs()).hasSize(SYNC_COMMITTEE_SUBNET_COUNT);
     }
   }
 
