@@ -79,6 +79,9 @@ public class GenesisGenerator {
     final SchemaDefinitions schemaDefinitions = genesisSpec.getSchemaDefinitions();
 
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
+    // Not createGenesisBody(state): the state is still empty here, so a Gloas body would embed a
+    // default execution payload bid. The header is recomputed in updateCandidateState once the
+    // bid is known.
     state.setLatestBlockHeader(
         createGenesisBlockHeader(schemaDefinitions.getBeaconBlockBodySchema().createEmpty()));
     state.setFork(genesisFork);
