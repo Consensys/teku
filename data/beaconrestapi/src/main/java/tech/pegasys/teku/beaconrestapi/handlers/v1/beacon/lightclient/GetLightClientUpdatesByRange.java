@@ -71,7 +71,6 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
                 getJsonResponseType(schemaDefinitionCache),
                 getSszResponseType())
             .withNotAcceptableResponse()
-            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

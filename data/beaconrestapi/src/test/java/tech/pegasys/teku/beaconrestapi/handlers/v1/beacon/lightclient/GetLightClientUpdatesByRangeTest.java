@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -128,10 +127,5 @@ public class GetLightClientUpdatesByRangeTest extends AbstractMigratedBeaconHand
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
-  }
-
-  @Test
-  void metadata_shouldHandle503() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }
