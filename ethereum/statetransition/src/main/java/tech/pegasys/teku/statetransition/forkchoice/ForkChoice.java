@@ -1265,7 +1265,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final IndexedAttestationLight attestation) {
     return spec.atSlot(attestation.data().getSlot())
         .getForkChoiceUtil()
-        .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.data(), AttestationSource.BLOCK)
+        .validateOnAttestation(
+            forkChoiceStrategy, currentEpoch, attestation.data(), AttestationSource.BLOCK)
         .isSuccessful();
   }
 

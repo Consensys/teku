@@ -537,7 +537,8 @@ public class ForkChoiceUtil {
     UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(getCurrentSlot(store));
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
 
-    return validateOnAttestation(forkChoiceStrategy, currentEpoch, attestationData, AttestationSource.GOSSIP);
+    return validateOnAttestation(
+        forkChoiceStrategy, currentEpoch, attestationData, AttestationSource.GOSSIP);
   }
 
   public AttestationProcessingResult validateOnAttestation(
@@ -553,13 +554,14 @@ public class ForkChoiceUtil {
             ? currentEpoch.minus(UInt64.ONE)
             : SpecConfig.GENESIS_EPOCH;
 
-    if(attestationSource == AttestationSource.GOSSIP) {
+    if (attestationSource == AttestationSource.GOSSIP) {
       if (!target.getEpoch().equals(previousEpoch) && !target.getEpoch().equals(currentEpoch)) {
         return AttestationProcessingResult.invalid(
-                "Attestations must be from the current or previous epoch");
+            "Attestations must be from the current or previous epoch");
       }
       if (!target.getEpoch().equals(miscHelpers.computeEpochAtSlot(attestationData.getSlot()))) {
-        return AttestationProcessingResult.invalid("Attestation slot must be within specified epoch");
+        return AttestationProcessingResult.invalid(
+            "Attestation slot must be within specified epoch");
       }
     }
 
