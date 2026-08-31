@@ -417,6 +417,11 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: unit
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -467,6 +472,11 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: integration
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -517,6 +527,11 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: property
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -567,6 +582,11 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: acceptance
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
