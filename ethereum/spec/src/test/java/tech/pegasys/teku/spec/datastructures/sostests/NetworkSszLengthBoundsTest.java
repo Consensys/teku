@@ -19,17 +19,16 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 class NetworkSszLengthBoundsTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalGloas();
-  private final SchemaDefinitionsGloas schemaDefinitions =
-      SchemaDefinitionsGloas.required(spec.getGenesisSchemaDefinitions());
+  private final Spec spec = TestSpecFactory.createMinimalHeze();
+  private final SchemaDefinitionsHeze schemaDefinitions =
+      SchemaDefinitionsHeze.required(spec.getGenesisSchemaDefinitions());
 
   @Test
-  void gloasTopLevelNetworkSchemasApplyConfiguredNetworkBounds() {
+  void hezeTopLevelNetworkSchemasApplyConfiguredNetworkBounds() {
     assertNetworkBound(
         schemaDefinitions.getSignedBeaconBlockSchema(),
         spec.getNetworkingConfig().getMaxPayloadSize());
@@ -37,6 +36,7 @@ class NetworkSszLengthBoundsTest {
     assertNetworkBound(schemaDefinitions.getAttesterSlashingSchema(), 2_097_616);
     assertNetworkBound(schemaDefinitions.getDataColumnSidecarSchema(), 8_585_272);
     assertNetworkBound(schemaDefinitions.getSignedExecutionPayloadBidSchema(), 196_932);
+    assertNetworkBound(schemaDefinitions.getSignedInclusionListSchema(), 41_112);
   }
 
   @Test
@@ -46,15 +46,6 @@ class NetworkSszLengthBoundsTest {
     assertThat(attestationSchema.getNetworkSszLengthBytesUpperBound().isEmpty()).isTrue();
     assertThat(attestationSchema.getNetworkSszLengthBounds())
         .isEqualTo(attestationSchema.getSszLengthBounds());
-  }
-
-  @Test
-  void hezeSignedInclusionListAppliesConfiguredNetworkBound() {
-    final Spec hezeSpec = TestSpecFactory.createMinimalHeze();
-    final SchemaDefinitionsHeze hezeSchemaDefinitions =
-        SchemaDefinitionsHeze.required(hezeSpec.getGenesisSchemaDefinitions());
-
-    assertNetworkBound(hezeSchemaDefinitions.getSignedInclusionListSchema(), 41_112);
   }
 
   private void assertNetworkBound(final SszType schema, final long expectedMaxBytes) {
