@@ -22,6 +22,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
   private final int inclusionListDueBps;
   private final int maxRequestInclusionList;
   private final int maxTransactionsBytesPerInclusionList;
+  private final int maxSignedInclusionListSize;
   private final int inclusionListCommitteeSize;
 
   public SpecConfigHezeImpl(
@@ -29,11 +30,13 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
       final int inclusionListDueBps,
       final int maxRequestInclusionList,
       final int maxTransactionsBytesPerInclusionList,
+      final int maxSignedInclusionListSize,
       final int inclusionListCommitteeSize) {
     super(specConfig);
     this.inclusionListDueBps = inclusionListDueBps;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxTransactionsBytesPerInclusionList = maxTransactionsBytesPerInclusionList;
+    this.maxSignedInclusionListSize = maxSignedInclusionListSize;
     this.inclusionListCommitteeSize = inclusionListCommitteeSize;
   }
 
@@ -58,6 +61,11 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
   }
 
   @Override
+  public int getMaxSignedInclusionListSize() {
+    return maxSignedInclusionListSize;
+  }
+
+  @Override
   public int getInclusionListCommitteeSize() {
     return inclusionListCommitteeSize;
   }
@@ -79,6 +87,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
     return inclusionListDueBps == that.inclusionListDueBps
         && maxRequestInclusionList == that.maxRequestInclusionList
         && maxTransactionsBytesPerInclusionList == that.maxTransactionsBytesPerInclusionList
+        && maxSignedInclusionListSize == that.maxSignedInclusionListSize
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize;
   }
 
@@ -89,6 +98,7 @@ public class SpecConfigHezeImpl extends DelegatingSpecConfigGloas implements Spe
         inclusionListDueBps,
         maxRequestInclusionList,
         maxTransactionsBytesPerInclusionList,
+        maxSignedInclusionListSize,
         inclusionListCommitteeSize);
   }
 }
