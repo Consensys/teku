@@ -1880,6 +1880,40 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onInclusionList_shouldRejectListExceedingTransactionSizeLimit() {
+    setupWithSpec(TestSpecFactory.createMinimalHeze());
+    final SchemaDefinitionsHeze schemaDefinitions =
+        SchemaDefinitionsHeze.required(spec.getGenesisSchemaDefinitions());
+    final int maxTransactionsSize =
+        spec.atSlot(ZERO)
+            .getConfig()
+            .toVersionHeze()
+            .orElseThrow()
+            .getMaxTransactionsBytesPerInclusionList();
+    final Transaction oversizedTransaction =
+        schemaDefinitions
+            .getExecutionPayloadSchema()
+            .getTransactionSchema()
+            .fromBytes(dataStructureUtil.randomBytes(maxTransactionsSize + 1));
+    final InclusionList inclusionList =
+        schemaDefinitions
+            .getInclusionListSchema()
+            .create(ZERO, ZERO, dataStructureUtil.randomBytes32(), List.of(oversizedTransaction));
+    final SignedInclusionList signedInclusionList =
+        schemaDefinitions
+            .getSignedInclusionListSchema()
+            .create(inclusionList, dataStructureUtil.randomSignature());
+
+    final InclusionListImportResult result =
+        safeJoin(forkChoice.onInclusionList(signedInclusionList));
+
+    assertThat(result.isSuccessful()).isFalse();
+    assertThat(result.getFailureReason())
+        .contains(InclusionListImportResult.FailureReason.TRANSACTIONS_SIZE_EXCEEDS_LIMIT);
+    assertThat(inclusionListStore.getInclusionLists(ZERO).orElseThrow()).isEmpty();
+  }
+
+  @Test
   void applyIndexedAttestations_gloasFullVoteShouldNotApplyWhenExecutionPayloadMissing() {
     setupWithSpec(
         TestSpecFactory.createMinimalGloas(
