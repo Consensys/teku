@@ -52,6 +52,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.versions.gloas.BuilderConfig;
@@ -97,9 +98,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private final AsyncRunner asyncRunner;
   private final AsyncRunner readinessAsyncRunner; // getPeerCount and getSyncingStatus will use this
   private final AtomicBoolean usePostValidatorsEndpoint;
+  private final boolean gloasScheduled;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
+      final Spec spec,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner,
       final AsyncRunner readinessAsyncRunner,
@@ -109,6 +112,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     this.readinessAsyncRunner = readinessAsyncRunner;
     this.typeDefClient = typeDefClient;
     this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
+    this.gloasScheduled = spec.isMilestoneSupported(SpecMilestone.GLOAS);
   }
 
   @Override
@@ -219,6 +223,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
       final UInt64 epoch, final boolean isFuluCompatible) {
+    if (gloasScheduled) {
+      LOG.debug("Calling ProposerDutiesV2, epoch: {}", epoch);
+      return sendRequest(() -> typeDefClient.getProposerDutiesV2(epoch));
+    }
+    LOG.debug("Calling ProposerDuties, epoch: {}, isFuluCompatible: {}", epoch, isFuluCompatible);
     return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
@@ -461,6 +470,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         new OkHttpValidatorTypeDefClient(
             httpClient, endpoint, spec, preferSszBlockEncoding, attestationsV2ApisEnabled);
     return new RemoteValidatorApiHandler(
-        endpoint, typeDefClient, asyncRunner, readinessAsyncRunner, usePostValidatorsEndpoint);
+        endpoint,
+        spec,
+        typeDefClient,
+        asyncRunner,
+        readinessAsyncRunner,
+        usePostValidatorsEndpoint);
   }
 }
