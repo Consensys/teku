@@ -22,12 +22,18 @@ public interface InclusionListImportResult {
     return new FailedInclusionListImportResult(FailureReason.EMPTY_TRANSACTION, Optional.empty());
   }
 
+  static InclusionListImportResult failedTransactionsSizeExceedsLimit() {
+    return new FailedInclusionListImportResult(
+        FailureReason.TRANSACTIONS_SIZE_EXCEEDS_LIMIT, Optional.empty());
+  }
+
   static InclusionListImportResult success(final SignedInclusionList signedInclusionList) {
     return new SuccessfulInclusionListImport(signedInclusionList);
   }
 
   enum FailureReason {
     EMPTY_TRANSACTION,
+    TRANSACTIONS_SIZE_EXCEEDS_LIMIT,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 

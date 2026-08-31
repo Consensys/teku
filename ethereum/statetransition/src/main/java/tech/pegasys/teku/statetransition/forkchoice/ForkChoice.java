@@ -373,6 +373,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 inclusionListSlot = inclusionList.getSlot();
     final UpdatableStore store = recentChainData.getStore();
 
+    final long transactionsSize =
+        inclusionList.getTransactions().stream()
+            .mapToLong(transaction -> transaction.getBytes().size())
+            .sum();
+    final int maxTransactionsSize =
+        spec.atSlot(inclusionListSlot)
+            .getConfig()
+            .toVersionHeze()
+            .orElseThrow()
+            .getMaxTransactionsBytesPerInclusionList();
+    if (transactionsSize > maxTransactionsSize) {
+      return SafeFuture.completedFuture(
+          InclusionListImportResult.failedTransactionsSizeExceedsLimit());
+    }
+
     if (inclusionList.getTransactions().stream()
         .anyMatch(transaction -> transaction.getBytes().isEmpty())) {
       return SafeFuture.completedFuture(InclusionListImportResult.failedEmptyTransaction());
