@@ -73,6 +73,15 @@ public class SignedInclusionListValidator {
               transactionsBytesSize, maxTransactionsBytesPerInclusionList));
     }
 
+    /*
+     * [REJECT] Every transaction in message.transactions is non-empty
+     */
+    if (inclusionList.getTransactions().stream()
+        .anyMatch(transaction -> transaction.getBytes().isEmpty())) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.reject("Inclusion List contains an empty transaction"));
+    }
+
     final InclusionListUtil inclusionListUtil =
         spec.atSlot(slot).getInclusionListUtil().orElseThrow();
 

@@ -18,11 +18,16 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclu
 
 public interface InclusionListImportResult {
 
+  static InclusionListImportResult failedEmptyTransaction() {
+    return new FailedInclusionListImportResult(FailureReason.EMPTY_TRANSACTION, Optional.empty());
+  }
+
   static InclusionListImportResult success(final SignedInclusionList signedInclusionList) {
     return new SuccessfulInclusionListImport(signedInclusionList);
   }
 
   enum FailureReason {
+    EMPTY_TRANSACTION,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
