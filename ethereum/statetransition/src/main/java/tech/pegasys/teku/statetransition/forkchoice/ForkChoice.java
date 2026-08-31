@@ -373,6 +373,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 inclusionListSlot = inclusionList.getSlot();
     final UpdatableStore store = recentChainData.getStore();
 
+    if (inclusionList.getTransactions().stream()
+        .anyMatch(transaction -> transaction.getBytes().isEmpty())) {
+      return SafeFuture.completedFuture(InclusionListImportResult.failedEmptyTransaction());
+    }
+
     final UInt64 currentSlot = spec.getCurrentSlot(store);
 
     final int slotDurationMillis =

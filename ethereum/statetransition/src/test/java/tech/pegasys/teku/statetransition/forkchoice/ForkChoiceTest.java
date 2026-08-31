@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,6 +84,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.FastConfirmationStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -111,8 +115,10 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
@@ -1846,6 +1852,31 @@ class ForkChoiceTest {
                 new ForkChoiceUpdatedResult(validButUnsatisfied, Optional.empty()))));
 
     assertThat(recentChainData.getStore().satisfiesInclusionList(targetBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void onInclusionList_shouldRejectListContainingEmptyTransaction() {
+    setupWithSpec(TestSpecFactory.createMinimalHeze());
+    final SchemaDefinitionsHeze schemaDefinitions =
+        SchemaDefinitionsHeze.required(spec.getGenesisSchemaDefinitions());
+    final Transaction emptyTransaction =
+        schemaDefinitions.getExecutionPayloadSchema().getTransactionSchema().fromBytes(Bytes.EMPTY);
+    final InclusionList inclusionList =
+        schemaDefinitions
+            .getInclusionListSchema()
+            .create(ZERO, ZERO, dataStructureUtil.randomBytes32(), List.of(emptyTransaction));
+    final SignedInclusionList signedInclusionList =
+        schemaDefinitions
+            .getSignedInclusionListSchema()
+            .create(inclusionList, dataStructureUtil.randomSignature());
+
+    final InclusionListImportResult result =
+        safeJoin(forkChoice.onInclusionList(signedInclusionList));
+
+    assertThat(result.isSuccessful()).isFalse();
+    assertThat(result.getFailureReason())
+        .contains(InclusionListImportResult.FailureReason.EMPTY_TRANSACTION);
+    assertThat(inclusionListStore.getInclusionLists(ZERO).orElseThrow()).isEmpty();
   }
 
   @Test
