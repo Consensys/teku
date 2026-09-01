@@ -407,6 +407,25 @@ jobs:
           fi
           echo "✅ All unitTests matrix jobs passed."
 
+  # Runs in its own job, isolated from collate-junit-reports: this org's action-allowlist
+  # policy is enforced per-job, so if capture-test-timings shared a job with anything that
+  # references a disallowed action, the whole job gets killed part-way through regardless
+  # of continue-on-error (verified: https://github.com/Consensys/teku/pull/11204).
+  unitTestsCaptureTimings:
+    runs-on: ubuntu-24.04
+    needs: [changes, unitTests]
+    if: always() && needs.changes.outputs.code == 'true'
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: unit
+
   unitTestsReport:
     runs-on: ubuntu-24.04
     needs: [changes, unitTests]
@@ -417,11 +436,6 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/capture-test-timings
-        continue-on-error: true
-        if: always()
-        with:
-          stage_key: unit
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -462,6 +476,21 @@ jobs:
           fi
           echo "✅ All integrationTests matrix jobs passed."
 
+  integrationTestsCaptureTimings:
+    runs-on: ubuntu-24.04
+    needs: [changes, integrationTests]
+    if: always() && needs.changes.outputs.code == 'true'
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: integration
+
   integrationTestsReport:
     runs-on: ubuntu-24.04
     needs: [changes, integrationTests]
@@ -472,11 +501,6 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/capture-test-timings
-        continue-on-error: true
-        if: always()
-        with:
-          stage_key: integration
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -517,6 +541,21 @@ jobs:
           fi
           echo "✅ All propertyTests matrix jobs passed."
 
+  propertyTestsCaptureTimings:
+    runs-on: ubuntu-24.04
+    needs: [changes, propertyTests]
+    if: always() && needs.changes.outputs.code == 'true'
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: property
+
   propertyTestsReport:
     runs-on: ubuntu-24.04
     needs: [changes, propertyTests]
@@ -527,11 +566,6 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/capture-test-timings
-        continue-on-error: true
-        if: always()
-        with:
-          stage_key: property
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
@@ -572,6 +606,21 @@ jobs:
           fi
           echo "✅ All acceptanceTests matrix jobs passed."
 
+  acceptanceTestsCaptureTimings:
+    runs-on: ubuntu-24.04
+    needs: [changes, acceptanceTests]
+    if: always() && needs.changes.outputs.code == 'true'
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/capture-test-timings
+        continue-on-error: true
+        if: always()
+        with:
+          stage_key: acceptance
+
   acceptanceTestsReport:
     runs-on: ubuntu-24.04
     needs: [changes, acceptanceTests]
@@ -582,11 +631,6 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/capture-test-timings
-        continue-on-error: true
-        if: always()
-        with:
-          stage_key: acceptance
       - uses: ./.github/actions/collate-junit-reports
         continue-on-error: true
         if: always()
