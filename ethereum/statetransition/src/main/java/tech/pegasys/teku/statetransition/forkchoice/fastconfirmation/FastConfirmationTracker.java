@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -317,16 +316,8 @@ public class FastConfirmationTracker {
     // Time the actual per-slot computation (state loading + get_latest_confirmed), which is what
     // the timeout bounds; the cheap guards above are deliberately left out of the measurement.
     final MetricsHistogram.Timer calculationTimerContext = calculationTimer.startTimer();
-    final long calculationStartNanos = System.nanoTime();
     return runFastConfirmation(input, currentStore)
-        .alwaysRun(
-            () -> {
-              calculationTimerContext.closeUnchecked().run();
-              LOG.info(
-                  "Fast confirmation calculation for slot {} took {} ms",
-                  input.slot(),
-                  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - calculationStartNanos));
-            });
+        .alwaysRun(() -> calculationTimerContext.closeUnchecked().run());
   }
 
   private SafeFuture<Void> runFastConfirmation(
