@@ -37,8 +37,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
+/**
+ * Milestone-parameterized counterpart to {@link ForkChoiceUtilReorgTest}, covering proposer re-org
+ * behaviour that differs across forks.
+ */
 @TestSpecContext(milestone = {BELLATRIX, FULU})
-class ForkChoiceUtilProposerHeadTest {
+class ForkChoiceUtilReorgMilestoneTest {
 
   @TestTemplate
   void getProposerHeadHandlesShufflingStabilityAtEpochBoundary(final SpecContext specContext) {

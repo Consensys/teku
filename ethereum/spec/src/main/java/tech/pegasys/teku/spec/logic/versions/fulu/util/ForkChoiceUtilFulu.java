@@ -17,7 +17,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
@@ -60,9 +59,14 @@ public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
     return true;
   }
 
+  /**
+   * From Fulu (EIP-7917) the proposer lookahead fixes proposer assignments before the epoch
+   * boundary, so re-orging a late block at the end of the previous epoch cannot change the current
+   * slot's proposer. The proposer is therefore always stable.
+   */
   @Override
-  protected boolean isProposerHeadReorgAllowed(final ReadOnlyStore store, final UInt64 slot) {
-    return isFinalizationOk(store, slot);
+  protected boolean isProposerStable(final UInt64 slot) {
+    return true;
   }
 
   @Override
