@@ -278,6 +278,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
+    clearPinnedBlockProductionIfExpired(
+        blockSlot, "payload attributes were requested for slot " + blockSlot);
+
     final Optional<PendingPayloadAttributesPreparation> existingPendingPreparation =
         pendingPayloadAttributesPreparation;
     if (existingPendingPreparation
@@ -619,52 +622,33 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     pinnedBlockProductionPreparation
         .filter(preparation -> preparation.isClearedByHead(forkChoiceState))
         .ifPresent(
-            preparation -> {
-              LOG.debug(
-                  "Clearing pinned block production for slot {} because head advanced to slot {}",
-                  preparation.slot(),
-                  forkChoiceState.headBlockSlot());
-              completePinnedBlockProductionExceptionally(
-                  preparation,
-                  "was cleared because head advanced to slot " + forkChoiceState.headBlockSlot());
-              pendingPayloadAttributesPreparation
-                  .filter(
-                      pendingPreparation ->
-                          pendingPreparation.matches(
-                              preparation.parentBeaconBlock(), preparation.slot()))
-                  .ifPresent(
-                      pendingPreparation ->
-                          completePendingPayloadAttributesPreparationExceptionally(
-                              pendingPreparation,
-                              "was cleared because head advanced to slot "
-                                  + forkChoiceState.headBlockSlot()));
-              pinnedBlockProductionPreparation = Optional.empty();
-            });
+            preparation ->
+                clearPinnedBlockProduction(
+                    preparation, "head advanced to slot " + forkChoiceState.headBlockSlot()));
   }
 
-  private void clearPinnedBlockProductionIfExpired(final UInt64 slot) {
+  private void clearPinnedBlockProductionIfExpired(
+      final UInt64 slot, final String expirationReason) {
     pinnedBlockProductionPreparation
         .filter(preparation -> preparation.isExpiredBySlot(slot))
+        .ifPresent(preparation -> clearPinnedBlockProduction(preparation, expirationReason));
+  }
+
+  private void clearPinnedBlockProduction(
+      final PinnedBlockProductionPreparation preparation, final String reason) {
+    LOG.debug(
+        "Clearing pinned block production for slot {} because {}", preparation.slot(), reason);
+    final String clearingReason = "was cleared because " + reason;
+    completePinnedBlockProductionExceptionally(preparation, clearingReason);
+    pendingPayloadAttributesPreparation
+        .filter(
+            pendingPreparation ->
+                pendingPreparation.matches(preparation.parentBeaconBlock(), preparation.slot()))
         .ifPresent(
-            preparation -> {
-              LOG.debug(
-                  "Clearing pinned block production for slot {} because attestations are due for slot {}",
-                  preparation.slot(),
-                  slot);
-              completePinnedBlockProductionExceptionally(
-                  preparation, "expired when attestations were due for slot " + slot);
-              pendingPayloadAttributesPreparation
-                  .filter(
-                      pendingPreparation ->
-                          pendingPreparation.matches(
-                              preparation.parentBeaconBlock(), preparation.slot()))
-                  .ifPresent(
-                      pendingPreparation ->
-                          completePendingPayloadAttributesPreparationExceptionally(
-                              pendingPreparation,
-                              "expired when attestations were due for slot " + slot));
-              pinnedBlockProductionPreparation = Optional.empty();
-            });
+            pendingPreparation ->
+                completePendingPayloadAttributesPreparationExceptionally(
+                    pendingPreparation, clearingReason));
+    pinnedBlockProductionPreparation = Optional.empty();
   }
 
   private void pinForkChoiceStateForBlockProduction(
@@ -865,7 +849,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
   private void prepareNextSlotProposal(final UInt64 slot) {
     // Assume `slot` is empty and check if we need to prepare to propose in the next slot
-    clearPinnedBlockProductionIfExpired(slot);
+    clearPinnedBlockProductionIfExpired(slot, "attestations were due for slot " + slot);
     final UInt64 proposalSlot = slot.plus(1);
     if (hasInclusionListPayloadAttributesForSlot(proposalSlot)) {
       return;
