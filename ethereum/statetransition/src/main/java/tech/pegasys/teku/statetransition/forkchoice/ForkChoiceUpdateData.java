@@ -88,6 +88,14 @@ public class ForkChoiceUpdateData {
     return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
   }
 
+  public ForkChoiceUpdateData withForkChoiceStateRetainingPayloadAttributes(
+      final ForkChoiceState forkChoiceState) {
+    if (this.forkChoiceState.equals(forkChoiceState)) {
+      return this;
+    }
+    return new ForkChoiceUpdateData(forkChoiceState, payloadBuildingAttributes, terminalBlockHash);
+  }
+
   public ForkChoiceUpdateData withPayloadBuildingAttributes(
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     if (this.payloadBuildingAttributes.equals(payloadBuildingAttributes)) {

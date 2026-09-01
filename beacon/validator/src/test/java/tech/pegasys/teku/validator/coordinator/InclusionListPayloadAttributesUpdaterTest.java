@@ -112,14 +112,16 @@ class InclusionListPayloadAttributesUpdaterTest {
     when(combinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
     when(chainHead.getRoot()).thenReturn(parentRoot);
     when(chainHead.getForkChoiceNode()).thenReturn(parentForkChoiceNode);
-    when(forkChoiceNotifier.getPayloadId(parentForkChoiceNode, proposerSlot, transactions))
+    when(forkChoiceNotifier.preparePayloadAttributes(
+            parentForkChoiceNode, proposerSlot, transactions))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
     assertThatSafeFuture(
             inclusionListPayloadAttributesUpdater.onInclusionListDue(inclusionListSlot))
         .isCompletedWithOptionalContaining(payloadId);
 
-    verify(forkChoiceNotifier).getPayloadId(parentForkChoiceNode, proposerSlot, transactions);
+    verify(forkChoiceNotifier)
+        .preparePayloadAttributes(parentForkChoiceNode, proposerSlot, transactions);
   }
 
   private InclusionListEntry createEntry(final InclusionList inclusionList) {

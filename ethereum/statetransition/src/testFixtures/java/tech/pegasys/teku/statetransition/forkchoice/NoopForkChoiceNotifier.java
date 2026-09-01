@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +46,14 @@ public class NoopForkChoiceNotifier implements ForkChoiceNotifier {
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
       final ForkChoiceNode parentBeaconBlock, final UInt64 blockSlot) {
     return null;
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadContext>> preparePayloadAttributes(
+      final ForkChoiceNode parentBeaconBlock,
+      final UInt64 blockSlot,
+      final List<Bytes> inclusionListTransactions) {
+    return getPayloadId(parentBeaconBlock, blockSlot);
   }
 
   @Override

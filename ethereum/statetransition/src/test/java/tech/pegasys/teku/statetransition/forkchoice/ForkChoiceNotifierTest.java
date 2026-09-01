@@ -791,7 +791,7 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
-  void getPayloadId_shouldRefreshPayloadAttributesWithInclusionLists() {
+  void preparePayloadAttributes_shouldRefreshPinnedPayloadAttributesWithInclusionLists() {
     final Bytes8 initialPayloadId = dataStructureUtil.randomBytes8();
     final Bytes8 updatedPayloadId = dataStructureUtil.randomBytes8();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
@@ -819,7 +819,7 @@ class ForkChoiceNotifierTest {
         createForkChoiceUpdatedResult(ExecutionPayloadStatus.VALID, Optional.of(initialPayloadId)));
 
     final SafeFuture<Optional<ExecutionPayloadContext>> updatedExecutionPayloadContext =
-        notifier.getPayloadId(
+        notifier.preparePayloadAttributes(
             ForkChoiceNode.createBase(blockRoot), blockSlot, inclusionListTransactions);
     assertThatSafeFuture(updatedExecutionPayloadContext).isNotCompleted();
 
@@ -830,6 +830,100 @@ class ForkChoiceNotifierTest {
         .isCompletedWithOptionalContaining(
             new ExecutionPayloadContext(
                 updatedPayloadId, forkChoiceState, updatedPayloadBuildingAttributes));
+  }
+
+  @Test
+  void preparePayloadAttributes_shouldReplaceStalePinForPreviousSlot() {
+    final Bytes8 currentSlotPayloadId = dataStructureUtil.randomBytes8();
+    final Bytes8 nextSlotPayloadId = dataStructureUtil.randomBytes8();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 currentBlockSlot = headState.getSlot().plus(1);
+    final UInt64 nextBlockSlot = currentBlockSlot.plus(1);
+    final List<PayloadBuildingAttributes> payloadBuildingAttributes =
+        withProposerForTwoSlots(forkChoiceState, headState, currentBlockSlot, nextBlockSlot);
+    final List<Bytes> inclusionListTransactions =
+        List.of(Bytes.fromHexString("0x01"), Bytes.fromHexString("0x02"));
+    final PayloadBuildingAttributes nextSlotPayloadBuildingAttributes =
+        withInclusionListTransactions(payloadBuildingAttributes.get(1), inclusionListTransactions);
+
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadBuildingAttributes.get(0))))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                createForkChoiceUpdatedResult(
+                    ExecutionPayloadStatus.VALID, Optional.of(currentSlotPayloadId))));
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(nextSlotPayloadBuildingAttributes)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                createForkChoiceUpdatedResult(
+                    ExecutionPayloadStatus.VALID, Optional.of(nextSlotPayloadId))));
+
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(currentBlockSlot));
+
+    assertThatSafeFuture(
+            notifier.preparePayloadAttributes(
+                ForkChoiceNode.createBase(blockRoot), nextBlockSlot, inclusionListTransactions))
+        .isCompletedWithOptionalContaining(
+            new ExecutionPayloadContext(
+                nextSlotPayloadId, forkChoiceState, nextSlotPayloadBuildingAttributes));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void preparePayloadAttributes_shouldPrepareBeforeBlockProductionIsPinned() {
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final List<Bytes> inclusionListTransactions =
+        List.of(Bytes.fromHexString("0x01"), Bytes.fromHexString("0x02"));
+
+    notifyForkChoiceUpdated(forkChoiceState);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withInclusionListTransactions(
+            withProposerForSlot(forkChoiceState, headState, blockSlot), inclusionListTransactions);
+    final AtomicReference<SafeFuture<Optional<PayloadBuildingAttributes>>> actualAttributesFuture =
+        new AtomicReference<>();
+    final SafeFuture<Optional<PayloadBuildingAttributes>> deferredAttributesFuture =
+        new SafeFuture<>();
+    doAnswer(
+            invocation -> {
+              actualAttributesFuture.set(
+                  (SafeFuture<Optional<PayloadBuildingAttributes>>) invocation.callRealMethod());
+              return deferredAttributesFuture;
+            })
+        .when(proposersDataManager)
+        .calculatePayloadBuildingAttributes(
+            any(), anyBoolean(), any(), anyBoolean(), eq(inclusionListTransactions));
+    when(executionLayerChannel.engineForkChoiceUpdated(
+            forkChoiceState, Optional.of(payloadBuildingAttributes)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                createForkChoiceUpdatedResult(
+                    ExecutionPayloadStatus.VALID, Optional.of(payloadId))));
+
+    final SafeFuture<Optional<ExecutionPayloadContext>> preparationFuture =
+        notifier.preparePayloadAttributes(
+            ForkChoiceNode.createBase(blockRoot), blockSlot, inclusionListTransactions);
+    assertThatSafeFuture(preparationFuture).isNotCompleted();
+
+    notifier.onForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+    eventThread.execute(() -> actualAttributesFuture.get().propagateTo(deferredAttributesFuture));
+
+    assertThatSafeFuture(preparationFuture)
+        .isCompletedWithOptionalContaining(
+            new ExecutionPayloadContext(payloadId, forkChoiceState, payloadBuildingAttributes));
+    assertThatSafeFuture(notifier.getPayloadId(ForkChoiceNode.createBase(blockRoot), blockSlot))
+        .isCompletedWithOptionalContaining(
+            new ExecutionPayloadContext(payloadId, forkChoiceState, payloadBuildingAttributes));
+    verify(executionLayerChannel, never())
+        .engineForkChoiceUpdated(
+            forkChoiceState,
+            Optional.of(withInclusionListTransactions(payloadBuildingAttributes, List.of())));
   }
 
   @Test
