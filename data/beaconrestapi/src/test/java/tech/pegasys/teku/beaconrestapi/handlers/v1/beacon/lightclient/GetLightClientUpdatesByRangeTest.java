@@ -33,14 +33,16 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.metadata.LightClientUpdateWithContext;
 
-public class GetLightClientUpdatesByRangeTest extends AbstractMigratedBeaconHandlerTest {
+public class GetLightClientUpdatesByRangeTest
+    extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   void setup() {
@@ -69,6 +71,19 @@ public class GetLightClientUpdatesByRangeTest extends AbstractMigratedBeaconHand
     request.setQueryParameter("count", "1000");
     when(chainDataProvider.getBestLightClientUpdates(UInt64.ONE, MAX_REQUEST_LIGHT_CLIENT_UPDATES))
         .thenReturn(List.of());
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(List.of());
+  }
+
+  @Test
+  void shouldReturnEmptyListWhenGenesisDataIsUnavailableAndRangeIsEmpty() throws Exception {
+    initialise(SpecMilestone.ALTAIR);
+    setHandler(new GetLightClientUpdatesByRange(chainDataProvider, schemaDefinitionCache));
+    request.setQueryParameter("start_period", "1");
+    request.setQueryParameter("count", "1");
 
     handler.handleRequest(request);
 

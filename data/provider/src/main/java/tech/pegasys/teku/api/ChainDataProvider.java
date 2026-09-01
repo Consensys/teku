@@ -171,8 +171,15 @@ public class ChainDataProvider {
 
   public List<LightClientUpdateWithContext> getBestLightClientUpdates(
       final UInt64 startPeriod, final int count) {
+    final List<LightClientUpdate> updates =
+        lightClientUpdateStore.getBestUpdatesInRange(startPeriod, count);
+
+    if (updates.isEmpty()) {
+      return List.of();
+    }
+
     final Bytes32 genesisValidatorsRoot = getGenesisStateData().getGenesisValidatorsRoot();
-    return lightClientUpdateStore.getBestUpdatesInRange(startPeriod, count).stream()
+    return updates.stream()
         .map(
             update ->
                 new LightClientUpdateWithContext(
