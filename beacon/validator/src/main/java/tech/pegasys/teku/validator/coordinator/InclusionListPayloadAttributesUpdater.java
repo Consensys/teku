@@ -119,7 +119,7 @@ public class InclusionListPayloadAttributesUpdater {
         return SafeFuture.completedFuture(Optional.empty());
       }
       return forkChoiceNotifier
-          .getPayloadId(maybeParentForkChoiceNode.get(), proposerSlot, transactions)
+          .preparePayloadAttributes(maybeParentForkChoiceNode.get(), proposerSlot, transactions)
           .thenApply(
               maybeExecutionPayloadContext ->
                   extractUpdatedPayloadId(
