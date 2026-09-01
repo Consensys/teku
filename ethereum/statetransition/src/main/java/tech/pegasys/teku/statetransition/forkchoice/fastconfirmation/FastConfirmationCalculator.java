@@ -301,7 +301,7 @@ class FastConfirmationCalculator {
    * common case, since most latest messages vote at or near the head and so support the whole chain
    * — and otherwise binary-searches the boundary of the supported prefix.
    */
-  private int findLatestSupportedChainIndex(
+  int findLatestSupportedChainIndex(
       final List<ForkChoiceNode> chainNodes, final ForkChoiceNode votedNode) {
     final int last = chainNodes.size() - 1;
     if (isAncestor(votedNode, chainNodes.get(last))) {
