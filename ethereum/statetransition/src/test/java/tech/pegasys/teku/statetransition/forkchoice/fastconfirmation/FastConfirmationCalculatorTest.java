@@ -229,6 +229,57 @@ class FastConfirmationCalculatorTest {
   }
 
   @Test
+  void shouldComputeChainAttestationScoresInOnePassMatchingPerBlockScores() {
+    buildLinearChain(8);
+    // Validator 5 votes for a descendant of the whole chain but is slashed -> excluded everywhere.
+    final BeaconState balanceSource = withSlashedValidator(genesisState(), 5);
+    final Bytes32 offChainRoot = Bytes32.random();
+    when(store.getVoteSnapshot())
+        .thenReturn(
+            voteSnapshot(
+                Map.of(
+                    0, vote(chain.get(7)), // supports every scored block
+                    1, vote(chain.get(4)), // supports chain[3..4] only
+                    2, vote(chain.get(2)), // below the scored chain -> supports none of it
+                    3, equivocatingVote(chain.get(7)), // equivocating -> excluded
+                    4, vote(offChainRoot), // unknown to fork choice -> supports none
+                    5, vote(chain.get(7))))); // slashed -> excluded
+    final FastConfirmationCalculator calculator = calculator(chain.get(7), 7);
+
+    final List<Bytes32> scoredChain =
+        List.of(chain.get(3), chain.get(4), chain.get(5), chain.get(6), chain.get(7));
+    final Map<Bytes32, UInt64> batchScores =
+        calculator.computeChainAttestationScores(scoredChain, balanceSource);
+
+    assertThat(batchScores).containsOnlyKeys(scoredChain);
+    for (final Bytes32 root : scoredChain) {
+      assertThat(batchScores.get(root))
+          .isEqualTo(calculator.getAttestationScore(root, balanceSource));
+    }
+  }
+
+  @Test
+  void shouldMemoizeSlotCommitteesWithinTheSlotRun() {
+    final BeaconState headState = genesisState();
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(headState, 0);
+
+    assertThat(calculator.getSlotCommittee(UInt64.ZERO))
+        .isSameAs(calculator.getSlotCommittee(UInt64.ZERO));
+  }
+
+  @Test
+  void shouldSkipCommitteeComputationEntirelyWhenNoValidatorIsEquivocating() {
+    // No equivocating votes: the score is zero by definition and no slot committee is materialized
+    // — a committee query this far beyond the head state's epoch would otherwise throw.
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(genesisState(), 0);
+
+    assertThat(
+            calculator.getEquivocationScore(
+                genesisState(), UInt64.valueOf(1_000_000), UInt64.valueOf(1_000_001)))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
   void shouldResolveGloasVoteToSupportedNodeBeforeCheckingAncestry() {
     buildLinearChain(6);
     final BeaconState balanceSource = gloasGenesisState();
@@ -354,6 +405,43 @@ class FastConfirmationCalculatorTest {
             .computeAdversarialWeight(balanceSource, UInt64.valueOf(3), UInt64.valueOf(6));
 
     assertThat(withEquivocation).isLessThan(withoutEquivocation);
+  }
+
+  @Test
+  void shouldMemoizeAdversarialWeightPerSlotRange() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 10);
+
+    // Identity, not just equality: the second call must return the memoized instance.
+    assertThat(
+            calculator.computeAdversarialWeight(
+                balanceSource, UInt64.valueOf(3), UInt64.valueOf(6)))
+        .isSameAs(
+            calculator.computeAdversarialWeight(
+                balanceSource, UInt64.valueOf(3), UInt64.valueOf(6)));
+  }
+
+  @Test
+  void shouldMemoizeSafetyThresholdPerBlock() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    final FastConfirmationCalculator calculator = calculatorWithHeadState(balanceSource, 5);
+
+    // Identity, not just equality: the second call must return the memoized instance.
+    assertThat(calculator.computeSafetyThreshold(chain.get(3), balanceSource))
+        .isSameAs(calculator.computeSafetyThreshold(chain.get(3), balanceSource));
+  }
+
+  @Test
+  void shouldMemoizeHonestFfgSupportForCurrentTarget() {
+    buildLinearChain(11);
+    final BeaconState balanceSource = genesisState();
+    final FastConfirmationCalculator calculator = calculator(balanceSource, chain.get(10), 12);
+
+    // Identity, not just equality: the second call must return the memoized instance.
+    assertThat(calculator.computeHonestFfgSupportForCurrentTarget())
+        .isSameAs(calculator.computeHonestFfgSupportForCurrentTarget());
   }
 
   @Test
