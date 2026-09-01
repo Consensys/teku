@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice.fastconfirmation;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -316,8 +317,16 @@ public class FastConfirmationTracker {
     // Time the actual per-slot computation (state loading + get_latest_confirmed), which is what
     // the timeout bounds; the cheap guards above are deliberately left out of the measurement.
     final MetricsHistogram.Timer calculationTimerContext = calculationTimer.startTimer();
+    final long calculationStartNanos = System.nanoTime();
     return runFastConfirmation(input, currentStore)
-        .alwaysRun(() -> calculationTimerContext.closeUnchecked().run());
+        .alwaysRun(
+            () -> {
+              calculationTimerContext.closeUnchecked().run();
+              LOG.info(
+                  "Fast confirmation calculation for slot {} took {} ms",
+                  input.slot(),
+                  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - calculationStartNanos));
+            });
   }
 
   private SafeFuture<Void> runFastConfirmation(
@@ -350,6 +359,11 @@ public class FastConfirmationTracker {
         nextSlotIsEpochStart
             ? FastConfirmationRuleUtil.getGreatestUnrealizedJustifiedCheckpoint(store)
             : store.getFinalizedCheckpoint();
+    if (nextSlotIsEpochStart) {
+      // This checkpoint rotates into the next epoch's current balance source; warm its state and
+      // scoring balances off the critical path so the epoch-start slot finds both cached.
+      prefetchNextEpochBalanceSource(store, greatestUnrealizedJustifiedCheckpoint);
+    }
 
     final FastConfirmationStore withUpdatedVariables =
         FastConfirmationRuleUtil.updateFastConfirmationVariables(
@@ -374,6 +388,34 @@ public class FastConfirmationTracker {
     return computeConfirmedRoot(withUpdatedVariables, input.slot(), currentSlotIsEpochStart)
         .thenAccept(confirmedRoot -> applyConfirmedRoot(input, withUpdatedVariables, confirmedRoot))
         .exceptionally(error -> abandonConfirmation(error, input.slot()));
+  }
+
+  /**
+   * Warms the state that becomes the next epoch's current balance source, plus its flat scoring
+   * balances, off the critical path: at the epoch-start slot the walk needs {@code
+   * store.checkpoint_states[observed justified]} and its zeroed-balances list, and building the
+   * list for a mainnet-sized validator set is expensive enough to dominate that slot. The balances
+   * are built on the fast confirmation runner (idle between slots) rather than on the store's
+   * completion thread. Fire-and-forget: on any failure the epoch-start slot simply loads both
+   * itself, as before.
+   */
+  private void prefetchNextEpochBalanceSource(
+      final ReadOnlyStore store, final Checkpoint checkpoint) {
+    asyncRunner.ifPresent(
+        runner ->
+            store
+                .retrieveCheckpointState(checkpoint)
+                .thenCompose(
+                    maybeState ->
+                        runner.runAsync(
+                            () ->
+                                maybeState.ifPresent(
+                                    state ->
+                                        spec.getBeaconStateUtil(state.getSlot())
+                                            .getEffectiveActiveUnslashedBalances(state))))
+                .finish(
+                    error ->
+                        LOG.debug("Failed to prefetch the next epoch's balance source", error)));
   }
 
   /**
@@ -456,7 +498,8 @@ public class FastConfirmationTracker {
   private SafeFuture<Bytes32> computeConfirmedRoot(
       final FastConfirmationStore fcrStore, final UInt64 slot, final boolean atEpochStart) {
     final Bytes32 finalizedRoot = fcrStore.store().getFinalizedCheckpoint().getRoot();
-    return FastConfirmationStateLoader.load(fcrStore, fcrStore.currentSlotHead(), atEpochStart)
+    return FastConfirmationStateLoader.load(
+            spec, fcrStore, fcrStore.currentSlotHead(), slot, atEpochStart)
         .orTimeout(updateTimeout(slot))
         .thenApply(maybeStates -> resolveConfirmedRoot(fcrStore, slot, finalizedRoot, maybeStates));
   }
