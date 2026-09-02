@@ -559,10 +559,11 @@ public class ForkChoiceUtil {
         return AttestationProcessingResult.invalid(
             "Attestations must be from the current or previous epoch");
       }
-      if (!target.getEpoch().equals(miscHelpers.computeEpochAtSlot(attestationData.getSlot()))) {
-        return AttestationProcessingResult.invalid(
-            "Attestation slot must be within specified epoch");
-      }
+    }
+
+    if (!target.getEpoch().equals(miscHelpers.computeEpochAtSlot(attestationData.getSlot()))) {
+      return AttestationProcessingResult.invalid(
+          "Attestation slot must be within specified epoch");
     }
 
     if (!forkChoiceStrategy.contains(target.getRoot())) {
