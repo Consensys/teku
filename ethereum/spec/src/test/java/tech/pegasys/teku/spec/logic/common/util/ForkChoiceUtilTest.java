@@ -661,8 +661,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void
-      validateOnAttestation_blockSource_shouldSkipRecencyCheckButStillEnforceEpochConsistency() {
+  void validateOnAttestation_blockSource_shouldSkipRecencyCheckButStillEnforceEpochConsistency() {
     // AttestationSource.BLOCK is only meant to skip the current/previous-epoch recency check
     // (which does not apply to attestations already embedded in a finalized-chain block).
     // Here the target epoch is neither current nor previous, but it is internally consistent
