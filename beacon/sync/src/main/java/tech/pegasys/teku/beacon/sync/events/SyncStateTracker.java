@@ -73,10 +73,11 @@ public class SyncStateTracker extends Service
   private boolean headIsOptimistic = false;
 
   /**
-   * True while we are reporting {@link SyncState#SYNCING} only because our head is too far behind
-   * the current slot, rather than because forward sync is actually running.
+   * True once we've told the user we're behind and haven't yet told them we caught up. Survives
+   * forward sync starting and stopping, so that repeated sync attempts against a head we can't
+   * reach don't each announce a start we never said had finished.
    */
-  private boolean heldBehindHead = false;
+  private boolean reportedBehindHead = false;
 
   private volatile SyncState currentState;
 
@@ -178,8 +179,7 @@ public class SyncStateTracker extends Service
 
   private void updateCurrentState() {
     final SyncState previousState = currentState;
-    final boolean wasHeldBehindHead = heldBehindHead;
-    heldBehindHead = false;
+    boolean heldBehindHead = false;
     if (headIsOptimistic) {
       currentState = syncActive ? SyncState.OPTIMISTIC_SYNCING : SyncState.AWAITING_EL;
     } else if (syncActive) {
@@ -198,14 +198,16 @@ public class SyncStateTracker extends Service
       currentState = SyncState.IN_SYNC;
     }
 
-    if (heldBehindHead && !wasHeldBehindHead) {
+    if (heldBehindHead && !reportedBehindHead) {
+      reportedBehindHead = true;
       knownChainHeadSlot()
           .ifPresentOrElse(
               knownHead ->
                   eventLogger.syncStoppedWhileBehindHead(
                       knownHead.minusMinZero(recentChainData.getHeadSlot()).longValue()),
               eventLogger::notInSyncWithoutPeers);
-    } else if (wasHeldBehindHead && currentState == SyncState.IN_SYNC) {
+    } else if (reportedBehindHead && currentState == SyncState.IN_SYNC) {
+      reportedBehindHead = false;
       eventLogger.syncCompleted();
     }
 
@@ -317,7 +319,11 @@ public class SyncStateTracker extends Service
     }
 
     if (isSyncing) {
-      eventLogger.syncStart();
+      if (!reportedBehindHead) {
+        // while we're reporting that we're behind we never said syncing had finished, so a retry
+        // isn't a new sync as far as the user is concerned
+        eventLogger.syncStart();
+      }
       return;
     }
 

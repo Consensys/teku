@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -368,6 +369,44 @@ class SyncStateTrackerTest {
 
     assertSyncState(SyncState.SYNCING);
     verify(eventLogger).syncStoppedWhileBehindHead(anyLong());
+  }
+
+  @Test
+  public void shouldNotAnnounceSyncStartForRetriesWhileAlreadyReportingBehindHead() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    verify(eventLogger).syncStart();
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+    syncSubscriber.onSyncingChange(false);
+    verify(eventLogger).syncStoppedWhileBehindHead(anyLong());
+
+    // peers keep connecting and dropping, so forward sync repeatedly starts and fails. We never
+    // said syncing had finished, so we must not keep announcing that it started.
+    syncSubscriber.onSyncingChange(true);
+    syncSubscriber.onSyncingChange(false);
+    syncSubscriber.onSyncingChange(true);
+    syncSubscriber.onSyncingChange(false);
+
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger, times(1)).syncStart();
+    verify(eventLogger, times(1)).syncStoppedWhileBehindHead(anyLong());
+    verify(eventLogger, never()).syncCompleted();
+  }
+
+  @Test
+  public void shouldAnnounceSyncCompletedOnceAfterRepeatedFailedRetries() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+    syncSubscriber.onSyncingChange(false);
+    syncSubscriber.onSyncingChange(true);
+    syncSubscriber.onSyncingChange(false);
+
+    // a retry finally gets us there
+    headAt(CURRENT_SLOT);
+
+    assertSyncState(SyncState.IN_SYNC);
+    verify(eventLogger, times(1)).syncCompleted();
   }
 
   @Test
