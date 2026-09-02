@@ -16,30 +16,52 @@ package tech.pegasys.teku.beacon.sync.events;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncStateTracker extends Service
-    implements SyncStateProvider, OptimisticHeadSubscriber {
+    implements SyncStateProvider, OptimisticHeadSubscriber, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
+
+  /**
+   * Peer count from which we stop trusting a single peer's claimed head and require a second peer
+   * to corroborate it.
+   */
+  static final int MIN_PEERS_FOR_AGREEMENT = 3;
+
   private final AsyncRunner asyncRunner;
   private final ForwardSync syncService;
-  private final P2PNetwork<? extends Peer> network;
+  private final Eth2P2PNetwork network;
+  private final RecentChainData recentChainData;
   private final Subscribers<SyncStateSubscriber> subscribers = Subscribers.create(true);
   private final EventLogger eventLogger;
   private final SettableGauge isSyncingGauge;
+
+  /**
+   * How far our head may lag the head the network reports before we stop considering ourselves in
+   * sync. Matches the window {@link RecentChainData#isCloseToInSync()} uses to enable gossip.
+   */
+  private final UInt64 maxSlotsBehindHead;
 
   private final Duration startupTimeout;
   private final int startupTargetPeerCount;
@@ -50,12 +72,20 @@ public class SyncStateTracker extends Service
   private long syncSubscriptionId;
   private boolean headIsOptimistic = false;
 
+  /**
+   * True while we are reporting {@link SyncState#SYNCING} only because our head is too far behind
+   * the current slot, rather than because forward sync is actually running.
+   */
+  private boolean heldBehindHead = false;
+
   private volatile SyncState currentState;
 
   public SyncStateTracker(
       final AsyncRunner asyncRunner,
       final ForwardSync syncService,
-      final P2PNetwork<? extends Peer> network,
+      final Eth2P2PNetwork network,
+      final RecentChainData recentChainData,
+      final Spec spec,
       final int startupTargetPeerCount,
       final Duration startupTimeout,
       final MetricsSystem metricsSystem) {
@@ -63,6 +93,8 @@ public class SyncStateTracker extends Service
         asyncRunner,
         syncService,
         network,
+        recentChainData,
+        spec,
         startupTargetPeerCount,
         startupTimeout,
         EVENT_LOG,
@@ -72,7 +104,9 @@ public class SyncStateTracker extends Service
   SyncStateTracker(
       final AsyncRunner asyncRunner,
       final ForwardSync syncService,
-      final P2PNetwork<? extends Peer> network,
+      final Eth2P2PNetwork network,
+      final RecentChainData recentChainData,
+      final Spec spec,
       final int startupTargetPeerCount,
       final Duration startupTimeout,
       final EventLogger eventLogger,
@@ -80,6 +114,11 @@ public class SyncStateTracker extends Service
     this.asyncRunner = asyncRunner;
     this.syncService = syncService;
     this.network = network;
+    this.recentChainData = recentChainData;
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    this.maxSlotsBehindHead =
+        UInt64.valueOf(
+            (long) genesisSpec.getSlotsPerEpoch() * genesisSpec.getConfig().getMaxSeedLookahead());
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeout = startupTimeout;
     this.eventLogger = eventLogger;
@@ -128,22 +167,96 @@ public class SyncStateTracker extends Service
     return subscribers.unsubscribe(subscriberId);
   }
 
+  /**
+   * Forward sync only notifies us when it starts and stops, so re-evaluate every slot to notice our
+   * head reaching the rest of the network while no sync is active.
+   */
+  @Override
+  public synchronized void onSlot(final UInt64 slot) {
+    updateCurrentState();
+  }
+
   private void updateCurrentState() {
     final SyncState previousState = currentState;
+    final boolean wasHeldBehindHead = heldBehindHead;
+    heldBehindHead = false;
     if (headIsOptimistic) {
       currentState = syncActive ? SyncState.OPTIMISTIC_SYNCING : SyncState.AWAITING_EL;
     } else if (syncActive) {
       currentState = SyncState.SYNCING;
     } else if (startingUp) {
       currentState = SyncState.START_UP;
+    } else if (isBehindKnownChainHead()) {
+      // Forward sync isn't running - it may have found no suitable peers, or stalled and be waiting
+      // to retry - but we have no reason to believe our head is the network's. Reporting IN_SYNC
+      // here would let block production and payload attribute calculation try to regenerate a state
+      // hundreds of slots ahead of our head, which is prohibitively expensive. Forward sync remains
+      // free to start again at any time and will move us back to SYNCING.
+      heldBehindHead = true;
+      currentState = SyncState.SYNCING;
     } else {
       currentState = SyncState.IN_SYNC;
+    }
+
+    if (heldBehindHead && !wasHeldBehindHead) {
+      knownChainHeadSlot()
+          .ifPresentOrElse(
+              knownHead ->
+                  eventLogger.syncStoppedWhileBehindHead(
+                      knownHead.minusMinZero(recentChainData.getHeadSlot()).longValue()),
+              eventLogger::notInSyncWithoutPeers);
+    } else if (wasHeldBehindHead && currentState == SyncState.IN_SYNC) {
+      eventLogger.syncCompleted();
     }
 
     if (currentState != previousState) {
       isSyncingGauge.set(currentState.isSyncing() ? 1.0 : 0.0);
       subscribers.deliver(SyncStateSubscriber::onSyncStateChange, currentState);
     }
+  }
+
+  /**
+   * True when we can't believe our own head is the network's. Deliberately says nothing about the
+   * current slot: our head block being old only means we're behind if there are actually blocks out
+   * there we're missing. If the chain itself has a long run of empty slots our peers' heads are
+   * just as old as ours, so we correctly stay in sync and keep proposing.
+   */
+  private boolean isBehindKnownChainHead() {
+    return knownChainHeadSlot()
+        .map(
+            knownHead ->
+                knownHead
+                    .minusMinZero(recentChainData.getHeadSlot())
+                    .isGreaterThan(maxSlotsBehindHead))
+        // With nobody to compare against we can't tell a stale head from being at the tip. A node
+        // configured to expect peers but left with none has to assume the worst, otherwise it would
+        // try to build on a head that may be hours old. A node configured for no peers (a single
+        // node network) is authoritative on its own and must carry on proposing.
+        .orElseGet(this::expectsPeers);
+  }
+
+  private boolean expectsPeers() {
+    return startupTargetPeerCount > 0;
+  }
+
+  /**
+   * The head slot we believe the network is at, taken from peer status messages. Requires two peers
+   * to agree once we have enough of them, so that a single peer overstating its head can't convince
+   * us we're behind. Empty when we have no peers to ask.
+   */
+  private Optional<UInt64> knownChainHeadSlot() {
+    final List<UInt64> peerHeadSlots =
+        network
+            .streamPeers()
+            .filter(Eth2Peer::hasStatus)
+            .map(peer -> peer.getStatus().getHeadSlot())
+            .sorted(Comparator.reverseOrder())
+            .toList();
+    if (peerHeadSlots.isEmpty()) {
+      return Optional.empty();
+    }
+    final int requiredAgreement = peerHeadSlots.size() >= MIN_PEERS_FOR_AGREEMENT ? 2 : 1;
+    return Optional.of(peerHeadSlots.get(requiredAgreement - 1));
   }
 
   @Override
@@ -190,9 +303,10 @@ public class SyncStateTracker extends Service
 
     if (syncActive) {
       eventLogger.headNoLongerOptimisticWhileSyncing();
-    } else {
+    } else if (!isBehindKnownChainHead()) {
       eventLogger.syncCompleted();
     }
+    // when the head is too far behind, updateCurrentState() reports that we're still behind instead
   }
 
   private void logSyncStateOnSyncingChanged(
@@ -209,9 +323,10 @@ public class SyncStateTracker extends Service
 
     if (headIsOptimistic) {
       eventLogger.syncCompletedWhileHeadIsOptimistic();
-    } else {
+    } else if (!isBehindKnownChainHead()) {
       eventLogger.syncCompleted();
     }
+    // when the head is too far behind, updateCurrentState() reports that we're still behind instead
   }
 
   private synchronized void markStartupComplete() {

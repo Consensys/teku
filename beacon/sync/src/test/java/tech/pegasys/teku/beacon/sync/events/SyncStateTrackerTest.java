@@ -14,7 +14,9 @@
 package tech.pegasys.teku.beacon.sync.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -22,6 +24,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,22 +36,33 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.network.p2p.peer.StubPeer;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 class SyncStateTrackerTest {
 
   public static final int STARTUP_TARGET_PEER_COUNT = 5;
   public static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(10);
+  private static final Spec SPEC = TestSpecFactory.createDefault();
+  private static final long MAX_SLOTS_BEHIND_HEAD =
+      (long) SPEC.getGenesisSpec().getSlotsPerEpoch()
+          * SPEC.getGenesisSpec().getConfig().getMaxSeedLookahead();
+  private static final UInt64 CURRENT_SLOT = UInt64.valueOf(10_000);
+
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  @SuppressWarnings("unchecked")
-  private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
+  private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
 
   private final ForwardSync syncService = mock(ForwardSync.class);
+
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final EventLogger eventLogger = mock(EventLogger.class);
 
@@ -56,15 +71,19 @@ class SyncStateTrackerTest {
           asyncRunner,
           syncService,
           network,
+          recentChainData,
+          SPEC,
           STARTUP_TARGET_PEER_COUNT,
           STARTUP_TIMEOUT,
           eventLogger,
           metricsSystem);
   private SyncSubscriber syncSubscriber;
-  private PeerConnectedSubscriber<Peer> peerSubscriber;
+  private PeerConnectedSubscriber<Eth2Peer> peerSubscriber;
 
   @BeforeEach
   public void setUp() {
+    when(recentChainData.getHeadSlot()).thenReturn(CURRENT_SLOT);
+    peersReportingHeadSlots(CURRENT_SLOT, CURRENT_SLOT, CURRENT_SLOT);
     assertThat(tracker.start()).isCompleted();
 
     final ArgumentCaptor<SyncSubscriber> syncSubscriberArgumentCaptor =
@@ -73,7 +92,7 @@ class SyncStateTrackerTest {
     syncSubscriber = syncSubscriberArgumentCaptor.getValue();
 
     @SuppressWarnings("unchecked")
-    final ArgumentCaptor<PeerConnectedSubscriber<Peer>> peerSubscriberArgumentCaptor =
+    final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> peerSubscriberArgumentCaptor =
         ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
     verify(network).subscribeConnect(peerSubscriberArgumentCaptor.capture());
     peerSubscriber = peerSubscriberArgumentCaptor.getValue();
@@ -88,7 +107,14 @@ class SyncStateTrackerTest {
   public void shouldStartInSyncWhenTargetPeerCountIsZero() {
     final SyncStateProvider tracker =
         new SyncStateTracker(
-            asyncRunner, syncService, network, 0, STARTUP_TIMEOUT, new NoOpMetricsSystem());
+            asyncRunner,
+            syncService,
+            network,
+            recentChainData,
+            SPEC,
+            0,
+            STARTUP_TIMEOUT,
+            new NoOpMetricsSystem());
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
@@ -99,6 +125,8 @@ class SyncStateTrackerTest {
             asyncRunner,
             syncService,
             network,
+            recentChainData,
+            SPEC,
             STARTUP_TARGET_PEER_COUNT,
             Duration.ofSeconds(0),
             new NoOpMetricsSystem());
@@ -158,8 +186,7 @@ class SyncStateTrackerTest {
     verify(eventLogger).syncStart();
 
     // get connected
-    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
-    peerSubscriber.onConnected(new StubPeer());
+    completeStartup();
 
     // turn head optimistic
     tracker.onOptimisticHeadChanged(true);
@@ -202,6 +229,8 @@ class SyncStateTrackerTest {
             asyncRunner,
             syncService,
             network,
+            recentChainData,
+            SPEC,
             STARTUP_TARGET_PEER_COUNT,
             Duration.ofSeconds(0),
             new NoOpMetricsSystem());
@@ -223,8 +252,7 @@ class SyncStateTrackerTest {
   public void shouldBeInSyncWhenSyncCompletesIfPeerRequirementMet() {
     syncSubscriber.onSyncingChange(true);
     assertSyncState(SyncState.SYNCING);
-    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
-    peerSubscriber.onConnected(new StubPeer());
+    completeStartup();
     syncSubscriber.onSyncingChange(false);
     assertSyncState(SyncState.IN_SYNC);
   }
@@ -240,8 +268,7 @@ class SyncStateTrackerTest {
 
   @Test
   public void shouldBeInSyncWhenTargetPeerCountReachedAndSyncNotStarted() {
-    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
-    peerSubscriber.onConnected(new StubPeer());
+    completeStartup();
     assertSyncState(SyncState.IN_SYNC);
     verifyNoInteractions(eventLogger);
   }
@@ -249,7 +276,7 @@ class SyncStateTrackerTest {
   @Test
   public void shouldRemainInStartupUntilPeerCountIsReached() {
     when(network.getPeerCount()).thenReturn(1);
-    peerSubscriber.onConnected(new StubPeer());
+    peerSubscriber.onConnected(mock(Eth2Peer.class));
     assertSyncState(SyncState.START_UP);
   }
 
@@ -257,6 +284,232 @@ class SyncStateTrackerTest {
   public void shouldCompleteStartupWhenTimeoutIsReached() {
     asyncRunner.executeQueuedActions();
     assertSyncState(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldStayInSyncWhenTheChainItselfHasALongRunOfEmptySlots() {
+    completeStartup();
+    // Nobody is proposing, so every head block is ancient - ours and our peers' alike. We are in
+    // fact at the tip and must keep proposing to end the outage.
+    final UInt64 staleHead = CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD * 4);
+    peersReportingHeadSlots(staleHead, staleHead, staleHead);
+    headAt(staleHead);
+
+    assertSyncState(SyncState.IN_SYNC);
+    verifyNoInteractions(eventLogger);
+  }
+
+  @Test
+  public void shouldRemainSyncingWhenSyncStopsBeforeReachingTheChainOurPeersAreOn() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+    assertSyncState(SyncState.SYNCING);
+
+    // sync stops without reaching the target (e.g. all peers dropped, or it stalled and will retry)
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStoppedWhileBehindHead(MAX_SLOTS_BEHIND_HEAD + 1);
+    verify(eventLogger, never()).syncCompleted();
+  }
+
+  @Test
+  public void shouldBeInSyncWhenSyncStopsExactlyAtTheEdgeOfTheAllowedDistance() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD));
+
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.IN_SYNC);
+    verify(eventLogger).syncCompleted();
+  }
+
+  @Test
+  public void shouldReturnToInSyncOnceHeadCatchesUpWithoutSyncRestarting() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.SYNCING);
+
+    // head caught up via gossip, so no sync event will be fired - the slot event must notice
+    headAt(CURRENT_SLOT);
+
+    assertSyncState(SyncState.IN_SYNC);
+    verify(eventLogger).syncCompleted();
+  }
+
+  @Test
+  public void shouldBeAbleToReenterActiveSyncWhileHeldBehindHead() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.SYNCING);
+
+    // the retry mechanism starts a new sync - we must still see it as an active sync
+    syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+
+    headAt(CURRENT_SLOT);
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldNotReportBehindHeadRepeatedlyWhileHeldBehindHead() {
+    completeStartup();
+    syncSubscriber.onSyncingChange(true);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+    syncSubscriber.onSyncingChange(false);
+
+    tracker.onSlot(CURRENT_SLOT.plus(1));
+    tracker.onSlot(CURRENT_SLOT.plus(2));
+
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStoppedWhileBehindHead(anyLong());
+  }
+
+  @Test
+  public void shouldIgnoreASinglePeerOverstatingItsHeadOnceEnoughPeersAreConnected() {
+    completeStartup();
+    // one peer claims a head far ahead, the other two agree with us - don't let the liar hold us
+    peersReportingHeadSlots(
+        CURRENT_SLOT.plus(MAX_SLOTS_BEHIND_HEAD * 10), CURRENT_SLOT, CURRENT_SLOT);
+    headAt(CURRENT_SLOT);
+
+    assertSyncState(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldTrustASinglePeerWhenOnlyOneIsConnected() {
+    completeStartup();
+    peersReportingHeadSlots(CURRENT_SLOT);
+    headAt(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1));
+
+    assertSyncState(SyncState.SYNCING);
+  }
+
+  @Test
+  public void shouldBeBehindWhenTwoOfThreePeersAgreeOnAHigherHead() {
+    final UInt64 ourHead = CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1);
+    completeStartup();
+    peersReportingHeadSlots(CURRENT_SLOT, CURRENT_SLOT, ourHead);
+    headAt(ourHead);
+
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStoppedWhileBehindHead(MAX_SLOTS_BEHIND_HEAD + 1);
+  }
+
+  @Test
+  public void shouldNotBeBehindWhenOnlyOneOfThreePeersClaimsAHigherHead() {
+    final UInt64 ourHead = CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1);
+    completeStartup();
+    peersReportingHeadSlots(CURRENT_SLOT, ourHead, ourHead);
+    headAt(ourHead);
+
+    assertSyncState(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldStayInSyncWithoutPeersWhenMinimumExpectedPeersIsZero() {
+    // a single node network holding every validator has to keep proposing on its own
+    final SyncStateTracker tracker = startedTrackerExpectingPeers(0);
+    peersReportingHeadSlots();
+    when(recentChainData.getHeadSlot()).thenReturn(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD * 4));
+
+    tracker.onSlot(CURRENT_SLOT);
+
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
+    verify(eventLogger, never()).notInSyncWithoutPeers();
+  }
+
+  @Test
+  public void shouldNotTrustOwnHeadWithoutPeersWhenMinimumExpectedPeersIsFour() {
+    final SyncStateTracker tracker = startedTrackerExpectingPeers(4);
+    peersReportingHeadSlots();
+    when(recentChainData.getHeadSlot()).thenReturn(CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD * 4));
+
+    tracker.onSlot(CURRENT_SLOT);
+
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.SYNCING);
+    verify(eventLogger).notInSyncWithoutPeers();
+  }
+
+  @Test
+  public void shouldStayInSyncWithoutPeersWhenMinimumExpectedPeersIsZeroEvenAtGenesisHead() {
+    // nothing has been imported yet, so there is no head to compare against either
+    final SyncStateTracker tracker = startedTrackerExpectingPeers(0);
+    peersReportingHeadSlots();
+    when(recentChainData.getHeadSlot()).thenReturn(UInt64.ZERO);
+
+    tracker.onSlot(CURRENT_SLOT);
+
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldRecoverOnceAPeerConnectsAndAgreesWithOurHead() {
+    completeStartup();
+    peersReportingHeadSlots();
+    headAt(CURRENT_SLOT);
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).notInSyncWithoutPeers();
+
+    peersReportingHeadSlots(CURRENT_SLOT);
+    tracker.onSlot(CURRENT_SLOT);
+
+    assertSyncState(SyncState.IN_SYNC);
+    verify(eventLogger).syncCompleted();
+  }
+
+  private void completeStartup() {
+    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
+    peerSubscriber.onConnected(mock(Eth2Peer.class));
+  }
+
+  /**
+   * A started tracker configured with the given minimum expected peer count, already past its
+   * startup window so that the behind-head rule applies.
+   */
+  private SyncStateTracker startedTrackerExpectingPeers(final int minimumExpectedPeers) {
+    final SyncStateTracker tracker =
+        new SyncStateTracker(
+            asyncRunner,
+            syncService,
+            network,
+            recentChainData,
+            SPEC,
+            minimumExpectedPeers,
+            STARTUP_TIMEOUT,
+            eventLogger,
+            new NoOpMetricsSystem());
+    tracker.start().join();
+    // fires the startup timeout, leaving START_UP for trackers that were waiting for peers
+    asyncRunner.executeQueuedActions();
+    return tracker;
+  }
+
+  /** Sets our chain head and fires the slot event that makes the tracker re-evaluate. */
+  private void headAt(final UInt64 headSlot) {
+    when(recentChainData.getHeadSlot()).thenReturn(headSlot);
+    tracker.onSlot(CURRENT_SLOT);
+  }
+
+  private void peersReportingHeadSlots(final UInt64... headSlots) {
+    final List<Eth2Peer> peers =
+        Stream.of(headSlots)
+            .map(
+                headSlot -> {
+                  final Eth2Peer peer = mock(Eth2Peer.class);
+                  final PeerStatus status = mock(PeerStatus.class);
+                  when(peer.hasStatus()).thenReturn(true);
+                  when(peer.getStatus()).thenReturn(status);
+                  when(status.getHeadSlot()).thenReturn(headSlot);
+                  return peer;
+                })
+            .toList();
+    when(network.streamPeers()).thenAnswer(__ -> peers.stream());
   }
 
   private void assertSyncState(final SyncState syncing) {
