@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszUtils;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -69,6 +70,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final AtomicBoolean registrationInProgress = new AtomicBoolean(false);
   private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
   private final AtomicReference<UInt64> lastSuccessfulRunEpoch = new AtomicReference<>();
+
+  private final AtomicBoolean disabled = new AtomicBoolean(false);
 
   private final Spec spec;
   private final OwnedValidators ownedValidators;
@@ -99,6 +102,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onSlot(final UInt64 slot) {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     currentEpoch.set(epoch);
+    // signed proposer preferences supersedes validator registrations
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      disabled.set(true);
+    }
   }
 
   @Override
@@ -148,6 +155,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {
+    if (disabled.get()) {
+      return;
+    }
     if (!registrationInProgress.compareAndSet(false, true)) {
       LOG.warn(
           "Validator registration(s) is still in progress. Will skip sending registration(s).");

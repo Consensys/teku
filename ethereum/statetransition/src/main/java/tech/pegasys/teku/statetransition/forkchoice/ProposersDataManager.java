@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
@@ -146,8 +147,15 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     }
   }
 
+  // pre-Gloas, we use prepare_beacon_proposer
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
+    updatePreparedProposerCache(preparedProposers, currentSlot);
+  }
+
+  // post-Gloas, we use signed proposer preferences
+  public void updatePreparedProposers(
+      final List<SignedProposerPreferences> preparedProposers, final UInt64 currentSlot) {
     updatePreparedProposerCache(preparedProposers, currentSlot);
   }
 
@@ -194,6 +202,19 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
             preparedProposerInfoByValidatorIndex.put(
                 proposer.validatorIndex(),
                 new PreparedProposerInfo(expirySlot, proposer.feeRecipient())));
+  }
+
+  private void updatePreparedProposerCache(
+      final List<SignedProposerPreferences> proposerPreferences, final UInt64 currentSlot) {
+    final UInt64 expirySlot =
+        currentSlot.plus(
+            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
+    proposerPreferences.forEach(
+        proposerPreference ->
+            preparedProposerInfoByValidatorIndex.put(
+                proposerPreference.getMessage().getValidatorIndex(),
+                new PreparedProposerInfo(
+                    expirySlot, proposerPreference.getMessage().getFeeRecipient())));
   }
 
   private void updateValidatorRegistrationCache(
@@ -350,11 +371,13 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       final UInt64 blockSlot,
       final UInt64 proposerIndex,
       final Optional<SignedValidatorRegistration> validatorRegistration) {
+    // post-Gloas, we use signed proposer preferences
     return proposerPreferencesManager
         .getProposerPreferences(blockSlot)
         .filter(
             proposerPreferences -> proposerPreferences.getValidatorIndex().equals(proposerIndex))
         .map(ProposerPreferences::getTargetGasLimit)
+        // pre-Gloas, we use validator registrations
         .or(
             () ->
                 validatorRegistration.map(registration -> registration.getMessage().getGasLimit()))

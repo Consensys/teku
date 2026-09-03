@@ -931,7 +931,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return SafeFuture.collectAll(
             signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
-        .thenApply(this::convertInternalValidationResults);
+        .thenApply(this::convertInternalValidationResults)
+        .thenPeek(
+            __ ->
+                proposersDataManager.updatePreparedProposers(
+                    signedProposerPreferences, combinedChainDataClient.getCurrentSlot()));
   }
 
   @Override

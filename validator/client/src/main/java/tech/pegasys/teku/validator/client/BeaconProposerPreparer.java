@@ -26,6 +26,7 @@ import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
@@ -43,6 +44,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicBoolean sentProposersAtLeastOnce = new AtomicBoolean(false);
+  private final AtomicBoolean disabled = new AtomicBoolean(false);
 
   public BeaconProposerPreparer(
       final ValidatorApiChannel validatorApiChannel,
@@ -61,7 +63,12 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (validatorIndexProvider.isEmpty()) {
+    if (validatorIndexProvider.isEmpty() || disabled.get()) {
+      return;
+    }
+    // signed proposer preferences supersedes prepare_beacon_proposer
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      disabled.set(true);
       return;
     }
     if (firstCallDone.compareAndSet(false, true) || isThirdSlotOfEpoch(slot)) {
@@ -120,7 +127,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   }
 
   private void sendPreparableProposerList() {
-    if (validatorIndexProvider.isEmpty()) {
+    if (validatorIndexProvider.isEmpty() || disabled.get()) {
       return;
     }
 
