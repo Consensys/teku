@@ -180,11 +180,12 @@ class FastConfirmationCalculator {
   private IntSet computeSlotCommittee(final UInt64 slot) {
     final BeaconState shufflingSource = getPulledUpHeadState();
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final int committeesCount = spec.getCommitteeCountPerSlot(shufflingSource, epoch).intValue();
+    final UInt64 committeesCount = spec.getCommitteeCountPerSlot(shufflingSource, epoch);
     final IntSet participants = new IntOpenHashSet();
-    for (int committeeIndex = 0; committeeIndex < committeesCount; committeeIndex++) {
-      participants.addAll(
-          spec.getBeaconCommittee(shufflingSource, slot, UInt64.valueOf(committeeIndex)));
+    for (UInt64 committeeIndex = UInt64.ZERO;
+        committeeIndex.isLessThan(committeesCount);
+        committeeIndex = committeeIndex.increment()) {
+      participants.addAll(spec.getBeaconCommittee(shufflingSource, slot, committeeIndex));
     }
     return participants;
   }

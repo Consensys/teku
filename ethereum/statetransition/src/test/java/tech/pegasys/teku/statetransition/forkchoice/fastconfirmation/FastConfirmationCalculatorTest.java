@@ -58,11 +58,15 @@ class FastConfirmationCalculatorTest {
   // A canonical linear chain where block at index i has parent = chain(i - 1); slots are
   // ascending but not necessarily consecutive (see buildLinearChainAtSlots).
   private final List<Bytes32> chain = new ArrayList<>();
-  private final List<Long> chainSlots = new ArrayList<>();
+  private final List<UInt64> chainSlots = new ArrayList<>();
   private final Map<Bytes32, Integer> indexByRoot = new HashMap<>();
 
   @BeforeEach
   void setUp() {
+    chain.clear();
+    chainSlots.clear();
+    indexByRoot.clear();
+
     when(store.getForkChoiceStrategy()).thenReturn(forkChoice);
     // Default to no votes; the weight tests re-stub with specific votes before building a
     // calculator.
@@ -186,8 +190,9 @@ class FastConfirmationCalculatorTest {
     final FastConfirmationCalculator calculator = calculatorWithHeadState(headState, 0);
 
     final IntSet allCommitteeMembers = new IntOpenHashSet();
-    for (int slot = 0; slot < spec.getSlotsPerEpoch(UInt64.ZERO); slot++) {
-      allCommitteeMembers.addAll(calculator.getSlotCommittee(UInt64.valueOf(slot)));
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getSlotsPerEpoch(UInt64.ZERO));
+    for (UInt64 slot = UInt64.ZERO; slot.isLessThan(slotsPerEpoch); slot = slot.increment()) {
+      allCommitteeMembers.addAll(calculator.getSlotCommittee(slot));
     }
 
     // Every active validator is assigned to exactly one committee per epoch, so the union of all
@@ -1031,11 +1036,11 @@ class FastConfirmationCalculatorTest {
       final Bytes32 root = Bytes32.random();
       indexByRoot.put(root, chain.size());
       chain.add(root);
-      chainSlots.add(slot);
+      chainSlots.add(UInt64.valueOf(slot));
     }
     for (int i = 0; i < chain.size(); i++) {
       final Bytes32 root = chain.get(i);
-      when(forkChoice.blockSlot(root)).thenReturn(Optional.of(UInt64.valueOf(chainSlots.get(i))));
+      when(forkChoice.blockSlot(root)).thenReturn(Optional.of(chainSlots.get(i)));
       when(forkChoice.contains(root)).thenReturn(true);
       final Bytes32 parent = i > 0 ? chain.get(i - 1) : Bytes32.ZERO;
       when(forkChoice.blockParentRoot(root)).thenReturn(Optional.of(parent));
@@ -1066,7 +1071,7 @@ class FastConfirmationCalculatorTest {
       return Optional.empty();
     }
     int i = index;
-    while (UInt64.valueOf(chainSlots.get(i)).isGreaterThan(targetSlot)) {
+    while (chainSlots.get(i).isGreaterThan(targetSlot)) {
       i--;
       if (i < 0) {
         return Optional.empty();
