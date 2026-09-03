@@ -838,8 +838,8 @@ public abstract class RecentChainData
 
   public List<ProtoNodeData> getChainHeadsIncludingNonViable() {
     return getForkChoiceStrategy()
-            .map((s) -> s.getChainHeads(true))
-            .orElse(Collections.emptyList());
+        .map((s) -> s.getChainHeads(true))
+        .orElse(Collections.emptyList());
   }
 
   public List<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
