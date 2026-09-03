@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -73,7 +74,6 @@ class SyncStateTrackerTest {
           syncService,
           network,
           recentChainData,
-          SPEC,
           STARTUP_TARGET_PEER_COUNT,
           STARTUP_TIMEOUT,
           eventLogger,
@@ -84,6 +84,15 @@ class SyncStateTrackerTest {
   @BeforeEach
   public void setUp() {
     when(recentChainData.getHeadSlot()).thenReturn(CURRENT_SLOT);
+    // stands in for the real RecentChainData tolerance, evaluated against whatever head is stubbed
+    // at the time it's asked
+    when(recentChainData.isHeadCloseToSlot(any()))
+        .thenAnswer(
+            invocation ->
+                invocation
+                    .<UInt64>getArgument(0)
+                    .minusMinZero(recentChainData.getHeadSlot())
+                    .isLessThanOrEqualTo(MAX_SLOTS_BEHIND_HEAD));
     peersReportingHeadSlots(CURRENT_SLOT, CURRENT_SLOT, CURRENT_SLOT);
     assertThat(tracker.start()).isCompleted();
 
@@ -112,7 +121,6 @@ class SyncStateTrackerTest {
             syncService,
             network,
             recentChainData,
-            SPEC,
             0,
             STARTUP_TIMEOUT,
             new NoOpMetricsSystem());
@@ -127,7 +135,6 @@ class SyncStateTrackerTest {
             syncService,
             network,
             recentChainData,
-            SPEC,
             STARTUP_TARGET_PEER_COUNT,
             Duration.ofSeconds(0),
             new NoOpMetricsSystem());
@@ -231,7 +238,6 @@ class SyncStateTrackerTest {
             syncService,
             network,
             recentChainData,
-            SPEC,
             STARTUP_TARGET_PEER_COUNT,
             Duration.ofSeconds(0),
             new NoOpMetricsSystem());
@@ -412,9 +418,13 @@ class SyncStateTrackerTest {
   @Test
   public void shouldIgnoreASinglePeerOverstatingItsHeadOnceEnoughPeersAreConnected() {
     completeStartup();
-    // one peer claims a head far ahead, the other two agree with us - don't let the liar hold us
+    // one peer claims a head far ahead, the rest agree with us - don't let the liar hold us back
     peersReportingHeadSlots(
-        CURRENT_SLOT.plus(MAX_SLOTS_BEHIND_HEAD * 10), CURRENT_SLOT, CURRENT_SLOT);
+        CURRENT_SLOT.plus(MAX_SLOTS_BEHIND_HEAD * 10),
+        CURRENT_SLOT,
+        CURRENT_SLOT,
+        CURRENT_SLOT,
+        CURRENT_SLOT);
     headAt(CURRENT_SLOT);
 
     assertSyncState(SyncState.IN_SYNC);
@@ -430,10 +440,10 @@ class SyncStateTrackerTest {
   }
 
   @Test
-  public void shouldBeBehindWhenTwoOfThreePeersAgreeOnAHigherHead() {
+  public void shouldBeBehindWhenMoreThanOnePeerAgreesOnAHigherHead() {
     final UInt64 ourHead = CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1);
     completeStartup();
-    peersReportingHeadSlots(CURRENT_SLOT, CURRENT_SLOT, ourHead);
+    peersReportingHeadSlots(CURRENT_SLOT, CURRENT_SLOT, ourHead, ourHead, ourHead);
     headAt(ourHead);
 
     assertSyncState(SyncState.SYNCING);
@@ -441,13 +451,24 @@ class SyncStateTrackerTest {
   }
 
   @Test
-  public void shouldNotBeBehindWhenOnlyOneOfThreePeersClaimsAHigherHead() {
+  public void shouldNotBeBehindWhenOnlyOnePeerClaimsAHigherHead() {
     final UInt64 ourHead = CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1);
     completeStartup();
-    peersReportingHeadSlots(CURRENT_SLOT, ourHead, ourHead);
+    peersReportingHeadSlots(CURRENT_SLOT, ourHead, ourHead, ourHead, ourHead);
     headAt(ourHead);
 
     assertSyncState(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldTrustTheHighestHeadWhenTooFewPeersAreConnectedToHaveAChoice() {
+    final UInt64 ourHead = CURRENT_SLOT.minus(MAX_SLOTS_BEHIND_HEAD + 1);
+    completeStartup();
+    // below the target peer count a single claim is all we have to go on, so we must act on it
+    peersReportingHeadSlots(CURRENT_SLOT, ourHead, ourHead);
+    headAt(ourHead);
+
+    assertSyncState(SyncState.SYNCING);
   }
 
   @Test
@@ -518,7 +539,6 @@ class SyncStateTrackerTest {
             syncService,
             network,
             recentChainData,
-            SPEC,
             minimumExpectedPeers,
             STARTUP_TIMEOUT,
             eventLogger,

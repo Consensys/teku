@@ -213,7 +213,6 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         forwardSync,
         p2pNetwork,
         recentChainData,
-        spec,
         getStartupTargetPeerCount,
         startupTimeout,
         metrics);
