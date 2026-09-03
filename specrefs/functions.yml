@@ -7507,7 +7507,7 @@
 - name: is_past_slot#gloas
   sources:
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/validation/ProposerPreferencesGossipValidator.java
-      search: proposal slot has already passed
+      search: proposal slot has already started
   spec: |
     <spec fn="is_past_slot" fork="gloas" hash="4bd9aba5">
     def is_past_slot(
