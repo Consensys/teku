@@ -135,18 +135,17 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   }
 
   private void requestPeerSearchIfRequired(final Throwable error) {
-    final Optional<String> reason =
-        switch (Throwables.getRootCause(error)) {
-          case NoPeersForOutboundMessageException ignored -> Optional.of(NO_PEERS_REASON);
-          case SemiDuplexNoOutboundStreamException ignored ->
-              Optional.of(NO_OUTBOUND_STREAM_REASON);
-          default -> Optional.empty();
-        };
-    reason.ifPresent(
-        r -> {
-          peerSearchRequestedCounter.labels(r).inc();
-          peerSearchRequester.run();
-        });
+    final Throwable rootCause = Throwables.getRootCause(error);
+    final String reason;
+    if (rootCause instanceof NoPeersForOutboundMessageException) {
+      reason = NO_PEERS_REASON;
+    } else if (rootCause instanceof SemiDuplexNoOutboundStreamException) {
+      reason = NO_OUTBOUND_STREAM_REASON;
+    } else {
+      return;
+    }
+    peerSearchRequestedCounter.labels(reason).inc();
+    peerSearchRequester.run();
   }
 
   public void subscribeToSubnetId(final int subnetId) {
