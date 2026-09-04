@@ -160,14 +160,27 @@ public class FatalErrorHandler {
     return !SHUTDOWN_TRIGGERED.compareAndSet(false, true);
   }
 
+  private static void terminateProcess(final int exitCode, final Duration gracefulTimeout) {
+    terminateProcess(
+        gracefulTimeout, () -> System.exit(exitCode), () -> Runtime.getRuntime().halt(exitCode));
+  }
+
   /**
    * Requests a graceful exit, falling back to halting the JVM if it doesn't complete within {@code
    * gracefulTimeout}.
    *
    * <p>{@link System#exit(int)} blocks the calling thread while shutdown hooks run, so it is
    * invoked from a dedicated thread to avoid deadlocking whichever thread reported the error.
+   *
+   * <p>The watchdog is what makes the shutdown reliable. Shutdown hooks stop services, some of
+   * which wait on latches with no timeout (Jetty's selector shutdown for example), and a hook that
+   * never returns leaves the JVM alive forever holding the {@code Shutdown} class monitor. {@link
+   * Runtime#halt(int)} takes a different lock and skips hooks entirely, so it still works in that
+   * state.
    */
-  private static void terminateProcess(final int exitCode, final Duration gracefulTimeout) {
+  @VisibleForTesting
+  static void terminateProcess(
+      final Duration gracefulTimeout, final Runnable exit, final Runnable halt) {
     try {
       startDaemonThread(
           "fatal-error-halt-watchdog",
@@ -179,12 +192,12 @@ public class FatalErrorHandler {
               return;
             }
             System.err.println("Graceful shutdown did not complete in time, halting JVM");
-            Runtime.getRuntime().halt(exitCode);
+            halt.run();
           });
-      startDaemonThread("fatal-error-shutdown", () -> System.exit(exitCode));
+      startDaemonThread("fatal-error-shutdown", exit);
     } catch (final Throwable t) {
       // We may not even be able to create threads anymore, so halt without a graceful shutdown
-      Runtime.getRuntime().halt(exitCode);
+      halt.run();
     }
   }
 

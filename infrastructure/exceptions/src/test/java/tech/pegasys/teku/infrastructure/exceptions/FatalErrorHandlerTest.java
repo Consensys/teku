@@ -20,7 +20,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -134,6 +136,67 @@ class FatalErrorHandlerTest {
     FatalErrorHandler.shutdownIfFatalError(new OutOfMemoryError(), "test");
 
     assertThat(terminations).hasValue(1);
+  }
+
+  /**
+   * Reproduces the shape of a real hang: an out of memory error triggered {@link System#exit(int)},
+   * which ran the shutdown hook, which blocked forever stopping the REST API (Jetty waits on an
+   * untimed latch). The JVM stayed alive for days with every other thread that called exit blocked
+   * on the {@code Shutdown} class monitor.
+   */
+  @Test
+  void terminateProcess_shouldHaltWhenAShutdownHookNeverReturns() throws Exception {
+    final CountDownLatch halted = new CountDownLatch(1);
+    final CountDownLatch wedgedHook = new CountDownLatch(1);
+
+    FatalErrorHandler.terminateProcess(
+        Duration.ofMillis(100),
+        () -> {
+          // System.exit never returns because a shutdown hook is stuck
+          try {
+            wedgedHook.await();
+          } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        },
+        halted::countDown);
+
+    assertThat(halted.await(30, TimeUnit.SECONDS)).isTrue();
+    wedgedHook.countDown();
+  }
+
+  @Test
+  void terminateProcess_shouldNotBlockTheReportingThread() {
+    final CountDownLatch wedgedHook = new CountDownLatch(1);
+
+    // Returns rather than blocking with the wedged exit call, unlike calling System.exit directly
+    FatalErrorHandler.terminateProcess(
+        Duration.ofHours(1),
+        () -> {
+          try {
+            wedgedHook.await();
+          } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        },
+        () -> {});
+
+    wedgedHook.countDown();
+  }
+
+  @Test
+  void terminateProcess_shouldUseDaemonThreadsSoTheyCannotKeepTheJvmAlive() {
+    FatalErrorHandler.terminateProcess(Duration.ofHours(1), () -> {}, () -> {});
+
+    assertThat(findThreads("fatal-error-"))
+        .isNotEmpty()
+        .allSatisfy(thread -> assertThat(thread.isDaemon()).isTrue());
+  }
+
+  private List<Thread> findThreads(final String namePrefix) {
+    return Thread.getAllStackTraces().keySet().stream()
+        .filter(thread -> thread.getName().startsWith(namePrefix))
+        .toList();
   }
 
   @Test
