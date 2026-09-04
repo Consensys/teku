@@ -347,6 +347,18 @@ public class GossipValidationHelper {
     return recentChainData.getBestBlockRoot().filter(root::equals).isPresent();
   }
 
+  public Optional<Bytes32> getShufflingDependentRoot(
+      final Bytes32 blockRoot, final UInt64 proposalSlot) {
+    final UInt64 proposalEpoch = spec.computeEpochAtSlot(proposalSlot);
+    final UInt64 minSeedLookahead =
+        UInt64.valueOf(spec.getSpecConfig(proposalEpoch).getMinSeedLookahead());
+    final UInt64 dependentSlot =
+        proposalEpoch.isLessThanOrEqualTo(minSeedLookahead)
+            ? UInt64.ZERO
+            : spec.computeStartSlotAtEpoch(proposalEpoch.minus(minSeedLookahead)).minus(ONE);
+    return getForkChoiceStrategy().getAncestor(blockRoot, dependentSlot);
+  }
+
   public boolean builderHasEnoughBalanceForBid(
       final UInt64 bidValue,
       final UInt64 builderIndex,

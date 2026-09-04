@@ -114,11 +114,17 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
-     * [IGNORE] the SignedProposerPreferences where preferences.proposal_slot is equal to
-     * bid.slot has been seen
+     * [IGNORE] The matching proposer preferences have been seen
      */
+    final Optional<Bytes32> maybeDependentRoot =
+        gossipValidationHelper.getShufflingDependentRoot(bid.getParentBlockRoot(), bid.getSlot());
+    if (maybeDependentRoot.isEmpty()) {
+      return completedFuture(
+          saveBidForFuture(
+              bid, "shuffling dependent root is unavailable; saving for future processing"));
+    }
     final Optional<ProposerPreferences> proposerPreferences =
-        proposerPreferencesManager.getProposerPreferences(bid.getSlot());
+        proposerPreferencesManager.getProposerPreferences(bid.getSlot(), maybeDependentRoot.get());
     if (proposerPreferences.isEmpty()) {
       return completedFuture(
           saveBidForFuture(bid, "no proposer preferences available; saving for future processing"));

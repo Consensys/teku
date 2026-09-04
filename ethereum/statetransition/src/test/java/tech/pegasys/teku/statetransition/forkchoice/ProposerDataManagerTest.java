@@ -155,8 +155,11 @@ public class ProposerDataManagerTest {
     final ProposerPreferencesManager proposerPreferencesManager =
         mock(ProposerPreferencesManager.class);
     final ProposersDataManager manager = createProposersDataManager(proposerPreferencesManager);
-    when(proposerPreferencesManager.getProposerPreferences(blockSlot))
-        .thenReturn(Optional.of(proposerPreferences(proposerIndex, targetGasLimit)));
+    when(proposerPreferencesManager.getProposerPreferencesForSlot(blockSlot))
+        .thenReturn(
+            List.of(
+                proposerPreferences(UInt64.valueOf(2), UInt64.valueOf(40_000_000)),
+                proposerPreferences(proposerIndex, targetGasLimit)));
 
     assertThat(
             manager.getTargetGasLimit(blockSlot, proposerIndex, Optional.of(validatorRegistration)))
@@ -188,9 +191,8 @@ public class ProposerDataManagerTest {
     final SignedValidatorRegistration validatorRegistration =
         validatorRegistrationWithGasLimit(registrationGasLimit);
 
-    when(proposerPreferencesManager.getProposerPreferences(blockSlot))
-        .thenReturn(
-            Optional.of(proposerPreferences(UInt64.valueOf(2), UInt64.valueOf(45_000_000))));
+    when(proposerPreferencesManager.getProposerPreferencesForSlot(blockSlot))
+        .thenReturn(List.of(proposerPreferences(UInt64.valueOf(2), UInt64.valueOf(45_000_000))));
 
     assertThat(
             manager.getTargetGasLimit(blockSlot, proposerIndex, Optional.of(validatorRegistration)))

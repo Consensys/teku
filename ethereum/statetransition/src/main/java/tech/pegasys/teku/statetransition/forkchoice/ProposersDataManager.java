@@ -376,10 +376,10 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
       final UInt64 proposerIndex,
       final Optional<SignedValidatorRegistration> validatorRegistration) {
     // post-Gloas, we use signed proposer preferences
-    return proposerPreferencesManager
-        .getProposerPreferences(blockSlot)
+    return proposerPreferencesManager.getProposerPreferencesForSlot(blockSlot).stream()
         .filter(
             proposerPreferences -> proposerPreferences.getValidatorIndex().equals(proposerIndex))
+        .findFirst()
         .map(ProposerPreferences::getTargetGasLimit)
         // pre-Gloas, we use validator registrations
         .or(
