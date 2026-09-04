@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.FatalErrorHandler;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
@@ -298,6 +299,34 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public SafeFuture<Void> toVoid() {
     return thenAccept(__ -> {});
+  }
+
+  /**
+   * Overridden to detect fatal errors being turned into a failed future. Async code across Teku
+   * catches {@link Throwable} and converts it into a failed future, which would otherwise allow an
+   * {@link OutOfMemoryError} to be swallowed and the node to keep running in a broken state.
+   */
+  @Override
+  public boolean completeExceptionally(final Throwable ex) {
+    checkForFatalError(ex);
+    return super.completeExceptionally(ex);
+  }
+
+  /**
+   * Shuts the node down if the error is fatal, then returns it unchanged so the normal handling can
+   * continue.
+   *
+   * <p>Applied to every method that hands an error to user supplied code ({@link
+   * #exceptionally(Function)}, {@link #handle(BiFunction)}, {@link #whenComplete(BiConsumer)} and
+   * their variants, which all the other error handling methods are built on). There is no correct
+   * way to handle a fatal error, so it must trigger a shutdown no matter which handler observes it
+   * - the vast majority of them just log the error and carry on.
+   */
+  private static Throwable checkForFatalError(final Throwable error) {
+    if (error != null) {
+      FatalErrorHandler.shutdownIfFatalError(error, "async task");
+    }
+    return error;
   }
 
   public boolean isCompletedNormally() {
@@ -713,20 +742,22 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   @Override
   public SafeFuture<T> exceptionally(final Function<Throwable, ? extends T> fn) {
-    return (SafeFuture<T>) super.exceptionally(fn);
+    return (SafeFuture<T>) super.exceptionally(error -> fn.apply(checkForFatalError(error)));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <U> SafeFuture<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn) {
-    return (SafeFuture<U>) super.handle(fn);
+    return (SafeFuture<U>)
+        super.handle((result, error) -> fn.apply(result, checkForFatalError(error)));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <U> SafeFuture<U> handleAsync(
       final BiFunction<? super T, Throwable, ? extends U> fn, final Executor executor) {
-    return (SafeFuture<U>) super.handleAsync(fn, executor);
+    return (SafeFuture<U>)
+        super.handleAsync((result, error) -> fn.apply(result, checkForFatalError(error)), executor);
   }
 
   /**
@@ -759,7 +790,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   @Override
   public SafeFuture<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action) {
-    return (SafeFuture<T>) super.whenComplete(action);
+    return (SafeFuture<T>)
+        super.whenComplete((result, error) -> action.accept(result, checkForFatalError(error)));
   }
 
   public SafeFuture<T> orTimeout(final Duration timeout) {
