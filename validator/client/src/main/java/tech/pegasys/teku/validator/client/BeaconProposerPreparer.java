@@ -88,7 +88,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   }
 
   private void sendPreparableProposerList() {
-    if (validatorIndexProvider.isEmpty() || disabled.get()) {
+    if (disabled.get() || validatorIndexProvider.isEmpty()) {
       return;
     }
 

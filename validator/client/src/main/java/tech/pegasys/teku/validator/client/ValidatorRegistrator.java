@@ -97,6 +97,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
+    if (disabled.get()) {
+      return;
+    }
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     currentEpoch.set(epoch);
     // signed proposer preferences supersedes validator registrations
