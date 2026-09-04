@@ -346,7 +346,8 @@ public class ValidatorApiHandlerIntegrationTest {
         .isCompletedWithValue(List.of(new SubmitDataError(ONE, rejectionDescription)));
     verify(proposerPreferencesManager).addLocal(accepted);
     verify(proposerPreferencesManager).addLocal(rejected);
-    verify(proposersDataManager).updatePreparedProposers(signedProposerPreferences, UInt64.ZERO);
+    verify(proposersDataManager)
+        .updatePreparedProposersFromProposerPreferences(signedProposerPreferences, UInt64.ZERO);
   }
 
   @TestTemplate
@@ -370,7 +371,8 @@ public class ValidatorApiHandlerIntegrationTest {
     assertThatSafeFuture(result).isCompletedWithValue(List.of());
     verify(proposerPreferencesManager).addLocal(ignored);
     verify(proposerPreferencesManager).addLocal(savedForFuture);
-    verify(proposersDataManager).updatePreparedProposers(signedProposerPreferences, UInt64.ZERO);
+    verify(proposersDataManager)
+        .updatePreparedProposersFromProposerPreferences(signedProposerPreferences, UInt64.ZERO);
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

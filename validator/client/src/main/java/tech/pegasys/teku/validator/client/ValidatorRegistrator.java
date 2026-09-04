@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -44,8 +43,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -70,7 +67,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final AtomicBoolean registrationInProgress = new AtomicBoolean(false);
   private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
   private final AtomicReference<UInt64> lastSuccessfulRunEpoch = new AtomicReference<>();
-
+  // used to disable this class post-Gloas
   private final AtomicBoolean disabled = new AtomicBoolean(false);
 
   private final Spec spec;
@@ -108,13 +105,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     }
   }
 
-  @Override
-  public void onHeadUpdate(
-      final UInt64 slot,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final Bytes32 headBlockRoot) {}
-
   /**
    * When possible missing events are detected, it may mean changing of BN which requires VC to run
    * registrations again. This event is handled by possibleMissingEvents flag in {@link
@@ -122,33 +112,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
    */
   @Override
   public void onPossibleMissedEvents() {}
-
-  @Override
-  public void onValidatorsAdded() {}
-
-  @Override
-  public void onBlockProductionDue(final UInt64 slot) {}
-
-  @Override
-  public void onAttestationCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {}
-
-  @Override
-  public void onSyncCommitteeCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onContributionCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onPayloadAttestationCreationDue(final UInt64 slot) {}
-
-  @Override
-  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
-
-  @Override
-  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")

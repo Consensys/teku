@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -147,17 +148,33 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     }
   }
 
-  // pre-Gloas, we use prepare_beacon_proposer
-  public void updatePreparedProposers(
-      final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
+  // pre-Gloas
+  public void updatePreparedProposersFromPrepareBeaconProposer(
+      final Collection<BeaconPreparableProposer> beaconPreparableProposers,
+      final UInt64 currentSlot) {
+    final Stream<ValidatorIndexAndFeeRecipient> preparedProposers =
+        beaconPreparableProposers.stream()
+            .map(
+                proposer ->
+                    new ValidatorIndexAndFeeRecipient(
+                        proposer.validatorIndex(), proposer.feeRecipient()));
     updatePreparedProposerCache(preparedProposers, currentSlot);
   }
 
-  // post-Gloas, we use signed proposer preferences
-  public void updatePreparedProposers(
-      final List<SignedProposerPreferences> preparedProposers, final UInt64 currentSlot) {
+  // post-Gloas
+  public void updatePreparedProposersFromProposerPreferences(
+      final Collection<SignedProposerPreferences> proposerPreferences, final UInt64 currentSlot) {
+    final Stream<ValidatorIndexAndFeeRecipient> preparedProposers =
+        proposerPreferences.stream()
+            .map(
+                proposerPreference ->
+                    new ValidatorIndexAndFeeRecipient(
+                        proposerPreference.getMessage().getValidatorIndex(),
+                        proposerPreference.getMessage().getFeeRecipient()));
     updatePreparedProposerCache(preparedProposers, currentSlot);
   }
+
+  private record ValidatorIndexAndFeeRecipient(UInt64 validatorIndex, Eth1Address feeRecipient) {}
 
   public SafeFuture<Void> updateValidatorRegistrations(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
@@ -193,28 +210,15 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
   }
 
   private void updatePreparedProposerCache(
-      final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
+      final Stream<ValidatorIndexAndFeeRecipient> preparedProposers, final UInt64 currentSlot) {
     final UInt64 expirySlot =
         currentSlot.plus(
             spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
     preparedProposers.forEach(
         proposer ->
             preparedProposerInfoByValidatorIndex.put(
-                proposer.validatorIndex(),
-                new PreparedProposerInfo(expirySlot, proposer.feeRecipient())));
-  }
-
-  private void updatePreparedProposerCache(
-      final List<SignedProposerPreferences> proposerPreferences, final UInt64 currentSlot) {
-    final UInt64 expirySlot =
-        currentSlot.plus(
-            spec.getSlotsPerEpoch(currentSlot) * PROPOSER_PREPARATION_EXPIRATION_EPOCHS);
-    proposerPreferences.forEach(
-        proposerPreference ->
-            preparedProposerInfoByValidatorIndex.put(
-                proposerPreference.getMessage().getValidatorIndex(),
-                new PreparedProposerInfo(
-                    expirySlot, proposerPreference.getMessage().getFeeRecipient())));
+                proposer.validatorIndex,
+                new PreparedProposerInfo(expirySlot, proposer.feeRecipient)));
   }
 
   private void updateValidatorRegistrationCache(

@@ -934,7 +934,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         .thenApply(this::convertInternalValidationResults)
         .thenPeek(
             __ ->
-                proposersDataManager.updatePreparedProposers(
+                proposersDataManager.updatePreparedProposersFromProposerPreferences(
                     signedProposerPreferences, combinedChainDataClient.getCurrentSlot()));
   }
 
@@ -943,7 +943,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     return SafeFuture.fromRunnable(
         () ->
-            proposersDataManager.updatePreparedProposers(
+            proposersDataManager.updatePreparedProposersFromPrepareBeaconProposer(
                 beaconPreparableProposers, combinedChainDataClient.getCurrentSlot()));
   }
 
