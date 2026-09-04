@@ -72,8 +72,7 @@ class FatalErrorHandlerTest {
 
   @Test
   void isFatalError_shouldDetectSubclassesOfOutOfMemoryError() {
-    class CustomOutOfMemoryError extends OutOfMemoryError {}
-
+    // For example Netty's OutOfDirectMemoryError
     assertThat(FatalErrorHandler.isFatalError(new RuntimeException(new CustomOutOfMemoryError())))
         .isTrue();
   }
@@ -209,4 +208,7 @@ class FatalErrorHandlerTest {
 
     assertThat(timeouts).containsExactly(FatalErrorHandler.GRACEFUL_SHUTDOWN_TIMEOUT);
   }
+
+  // Static so that this Serializable class doesn't reference the non serializable test class
+  private static class CustomOutOfMemoryError extends OutOfMemoryError {}
 }
