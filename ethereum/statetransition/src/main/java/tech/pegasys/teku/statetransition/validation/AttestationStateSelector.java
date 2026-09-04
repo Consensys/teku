@@ -105,7 +105,7 @@ public class AttestationStateSelector {
     if (isWithinHistoricalEpochs) {
       // if it's an ancestor of any chain head within historic slots, use that chain head.
       final Optional<BeaconState> maybeChainHeadData =
-          recentChainData.getChainHeads().stream()
+          recentChainData.getChainHeadsIncludingNonViable().stream()
               .filter(
                   head ->
                       isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot.get()))
@@ -213,7 +213,7 @@ public class AttestationStateSelector {
   private boolean isJustificationTooOld(
       final Bytes32 justifiedRoot, final UInt64 justifiedBlockSlot) {
 
-    return recentChainData.getChainHeads().stream()
+    return recentChainData.getChainHeadsIncludingNonViable().stream()
         // must be attesting to a viable chain
         .filter(head -> isAncestorOfChainHead(head.getRoot(), justifiedRoot, justifiedBlockSlot))
         // must be attesting to something that progresses justification

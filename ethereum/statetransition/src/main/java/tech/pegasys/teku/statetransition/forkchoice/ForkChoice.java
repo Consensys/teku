@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.datastructures.attestation.AttestationSource;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -1264,7 +1265,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final IndexedAttestationLight attestation) {
     return spec.atSlot(attestation.data().getSlot())
         .getForkChoiceUtil()
-        .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.data())
+        .validateOnAttestation(
+            forkChoiceStrategy, currentEpoch, attestation.data(), AttestationSource.BLOCK)
         .isSuccessful();
   }
 
